@@ -31,3 +31,7 @@ def floor(*args, **kwargs):
 
 def split(*args, **kwargs):
     return tensorflow.split(*args, **kwargs)
+
+
+def transpose(*args, **kwargs):
+    return tensorflow.transpose(*args, **kwargs)

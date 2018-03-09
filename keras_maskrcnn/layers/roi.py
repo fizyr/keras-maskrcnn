@@ -46,10 +46,13 @@ class RoiAlign(keras.layers.Layer):
 
         # process each pyramid independently
         rois = []
+        ordered_detections = []
         for i in range(len(fpn)):
             # select the detections from this pyramid
             indices = keras_retinanet.backend.where(keras.backend.equal(target_levels, i))
+
             level_detections = keras_retinanet.backend.gather_nd(detections, indices)
+            ordered_detections.append(level_detections)
 
             # convert to expected format for crop_and_resize
             shape = keras.backend.shape(fpn[i])
@@ -72,12 +75,21 @@ class RoiAlign(keras.layers.Layer):
                 self.crop_size
             ))
 
+        # reassemble the detections in a different order
+        detections = keras.backend.concatenate(ordered_detections, axis=0)
+
         # concatenate to one big blob
         rois = keras.backend.concatenate(rois, axis=0)
-        return keras.backend.expand_dims(rois, axis=0)
+        return [keras.backend.expand_dims(detections, axis=0), keras.backend.expand_dims(rois, axis=0)]
 
     def compute_output_shape(self, input_shape):
-       return (None, None, self.crop_size[0], self.crop_size[1], input_shape[1][-1])
+        return [
+            (input_shape[0][0], None, input_shape[0][2]),
+            (input_shape[0][0], None, self.crop_size[0], self.crop_size[1], input_shape[1][-1])
+        ]
+
+    def compute_mask(self, inputs, mask=None):
+        return 2 * [None]
 
     def get_config(self):
         config = super(RoiAlign, self).get_config()

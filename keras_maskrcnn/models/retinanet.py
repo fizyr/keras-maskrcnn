@@ -3,6 +3,7 @@ from keras_retinanet.models import retinanet
 
 from ..layers.roi import RoiAlign
 from ..layers.upsample import Upsample
+from ..layers.mask_loss import MaskLoss
 
 custom_objects = retinanet.custom_objects
 
@@ -47,7 +48,6 @@ def default_mask_model(
         kernel_size=1,
         activation='sigmoid',
     ), name='roi_mask')(outputs)
-    print(outputs)
 
     return keras.models.Model(inputs=inputs, outputs=outputs, name=name)
 
@@ -91,7 +91,7 @@ def retinanet_mask(
     if roi_submodels is None:
         roi_submodels = default_roi_submodels(num_classes)
 
-    image, gt_masks = inputs
+    image, annotations, gt_masks = inputs
 
     bbox_model = retinanet.retinanet_bbox(inputs=image, num_classes=num_classes, output_fpn=True, nms=False, **kwargs)
 
@@ -103,16 +103,16 @@ def retinanet_mask(
     detections     = bbox_model.outputs[-1]
 
     # get the region of interest features
-    rois = RoiAlign()([detections] + fpn)
+    detections, rois = RoiAlign()([detections] + fpn)
 
     # estimate masks
     masks = roi_submodels[0][1](rois)
 
     # compute mask loss
-    #masks_loss = MaskLoss()([masks, gt_masks])
+    masks_loss = MaskLoss()([detections, masks, annotations, gt_masks])
 
     # reconstruct the new output
-    outputs = regression + classification + other + [masks]
+    outputs = regression + classification + other + [detections, masks]
 
     # construct the model
     return keras.models.Model(inputs=inputs, outputs=outputs, name=name)
