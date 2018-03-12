@@ -20,6 +20,11 @@ import keras
 
 from keras_retinanet.preprocessing.coco import CocoGenerator
 from keras_retinanet.utils.anchors import bbox_transform
+from keras_retinanet.utils.image import (
+    adjust_transform_for_image,
+    apply_transform,
+)
+from keras_retinanet.utils.transform import transform_aabb
 
 
 class CocoGeneratorMask(CocoGenerator):
@@ -36,7 +41,9 @@ class CocoGeneratorMask(CocoGenerator):
 
         # some images appear to miss annotations (like image with id 257034)
         if len(annotations_ids) == 0:
-            return annotations
+            annotations = np.array([[0, 0, 1, 1, 0]], dtype=keras.backend.floatx())
+            mask = [np.zeros((image_info['height'], image_info['width'], 1), dtype=np.uint8)]
+            return annotations, masks
 
         # parse annotations
         coco_annotations = self.coco.loadAnns(annotations_ids)
@@ -79,6 +86,7 @@ class CocoGeneratorMask(CocoGenerator):
 
             for i in range(len(masks)):
                 masks[i] = apply_transform(transform, masks[i], self.transform_parameters)
+                masks[i] = np.expand_dims(masks[i], axis=2)
 
             # Transform the bounding boxes in the annotations.
             annotations = annotations.copy()
@@ -133,6 +141,9 @@ class CocoGeneratorMask(CocoGenerator):
         max_masks = max(len(m) for m in masks_group)
         masks_batch = -1 * np.ones((self.batch_size, max_masks) + max_shape[:-1], dtype=keras.backend.floatx())
         for batch_index, masks in enumerate(masks_group):
+            if len(masks) == 0:
+                continue
+
             masks = np.stack(masks)
             masks_batch[batch_index, :masks.shape[0], :masks.shape[1], :masks.shape[2]] = masks
 
@@ -143,7 +154,7 @@ class CocoGeneratorMask(CocoGenerator):
         for batch_index, annotations in enumerate(annotations_group):
             annotations_batch[batch_index, :annotations.shape[0], :] = annotations
 
-        return image_batch, annotations_group, masks_batch
+        return [image_batch, annotations_batch, masks_batch]
 
     def compute_targets(self, image_group, annotations_group):
         # get the max image shape
@@ -188,7 +199,7 @@ class CocoGeneratorMask(CocoGenerator):
                 labels_batches[i][index, ...]     = labels[i]
                 regression_batches[i][index, ...] = regression[i]
 
-        return regression_batches + labels_batches
+        return regression_batches + labels_batches + [np.zeros((1,))]  # the last target is for mask loss
 
     def compute_input_output(self, group):
         # load images and annotations

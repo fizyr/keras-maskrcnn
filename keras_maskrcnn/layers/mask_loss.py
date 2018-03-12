@@ -57,15 +57,27 @@ class MaskLoss(keras.layers.Layer):
         masks                = keras_retinanet.backend.gather_nd(masks, indices)
         argmax_overlaps_inds = keras.backend.cast(keras_retinanet.backend.gather_nd(argmax_overlaps_inds, indices), 'int32')
 
+        shape = keras.backend.shape(masks_target)[1:]
+        x1 = detections[:, 0]
+        y1 = detections[:, 1]
+        x2 = detections[:, 2]
+        y2 = detections[:, 3]
+        boxes = keras.backend.stack([
+            y1 / keras.backend.cast(shape[0] - 1, dtype=keras.backend.floatx()),
+            x1 / keras.backend.cast(shape[1] - 1, dtype=keras.backend.floatx()),
+            y2 / keras.backend.cast(shape[0] - 1, dtype=keras.backend.floatx()),
+            x2 / keras.backend.cast(shape[1] - 1, dtype=keras.backend.floatx()),
+        ], axis=1)
+
         # crop and resize masks_target
         masks_target = keras.backend.expand_dims(masks_target, axis=3)
         masks_target = backend.crop_and_resize(
             masks_target,
-            detections[:, :4],
+            boxes,
             argmax_overlaps_inds,
             keras.backend.int_shape(masks)[1:3]
         )
-        masks_target = keras.backend.squeeze(masks_target, axis=3)
+        masks_target = masks_target[:, :, :, 0]
 
         # gather the predicted masks
         masks = backend.transpose(masks, (0, 3, 1, 2))
@@ -78,12 +90,13 @@ class MaskLoss(keras.layers.Layer):
         # compute mask loss
         mask_loss = masks - masks_target
         mask_loss = keras.backend.abs(mask_loss)
-        mask_loss = keras.backend.sum(mask_loss) / keras.backend.maximum(keras.backend.cast(keras.backend.shape(masks)[0], keras.backend.floatx()), 1)
+        divisor = keras.backend.shape(masks)[0]# * keras.backend.shape(masks)[1] * keras.backend.shape(masks[2])
+        mask_loss = keras.backend.sum(mask_loss) / keras.backend.maximum(keras.backend.cast(divisor, keras.backend.floatx()), 1)
 
         return mask_loss
 
     def compute_output_shape(self, input_shape):
-       return (1,)
+       return ()
 
     def get_config(self):
         config = super(MaskLoss, self).get_config()

@@ -109,10 +109,10 @@ def retinanet_mask(
     masks = roi_submodels[0][1](rois)
 
     # compute mask loss
-    masks_loss = MaskLoss()([detections, masks, annotations, gt_masks])
+    mask_loss = MaskLoss(name='mask_loss')([detections, masks, annotations, gt_masks])
 
     # reconstruct the new output
-    outputs = regression + classification + other + [detections, masks]
+    outputs = regression + classification + other + [mask_loss, detections, masks]
 
     # construct the model
     return keras.models.Model(inputs=inputs, outputs=outputs, name=name)
