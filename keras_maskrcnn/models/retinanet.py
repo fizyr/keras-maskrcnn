@@ -92,6 +92,7 @@ def retinanet_mask(
         roi_submodels = default_roi_submodels(num_classes)
 
     image, annotations, gt_masks = inputs
+    image_shape = keras.layers.Lambda(lambda x: keras.backend.shape(x))(image)
 
     bbox_model = retinanet.retinanet_bbox(inputs=image, num_classes=num_classes, output_fpn=True, nms=False, **kwargs)
 
@@ -103,7 +104,7 @@ def retinanet_mask(
     detections     = bbox_model.outputs[-1]
 
     # get the region of interest features
-    detections, rois = RoiAlign()([detections] + fpn)
+    detections, rois = RoiAlign()([image_shape, detections] + fpn)
 
     # estimate masks
     masks = roi_submodels[0][1](rois)

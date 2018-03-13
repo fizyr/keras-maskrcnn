@@ -30,8 +30,9 @@ class RoiAlign(keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         # TODO: Support batch_size > 1
-        detections = inputs[0][0]
-        fpn        = [i[0] for i in inputs[1:]]
+        detections  = inputs[1][0]
+        fpn         = [i[0] for i in inputs[2:]]
+        image_shape = inputs[0]
 
         # compute best scores for each detection
         classification = detections[:, 4:]
@@ -48,23 +49,22 @@ class RoiAlign(keras.layers.Layer):
         rois = []
         ordered_detections = []
         for i in range(len(fpn)):
-            # select the detections from this pyramid
+            # select the detections from this pyramid level
             indices = keras_retinanet.backend.where(keras.backend.equal(target_levels, i))
 
             level_detections = keras_retinanet.backend.gather_nd(detections, indices)
             ordered_detections.append(level_detections)
 
             # convert to expected format for crop_and_resize
-            shape = keras.backend.shape(fpn[i])
             x1 = level_detections[:, 0]
             y1 = level_detections[:, 1]
             x2 = level_detections[:, 2]
             y2 = level_detections[:, 3]
             level_boxes = keras.backend.stack([
-                y1 / keras.backend.cast(shape[0] - 1, dtype=keras.backend.floatx()),
-                x1 / keras.backend.cast(shape[1] - 1, dtype=keras.backend.floatx()),
-                y2 / keras.backend.cast(shape[0] - 1, dtype=keras.backend.floatx()),
-                x2 / keras.backend.cast(shape[1] - 1, dtype=keras.backend.floatx()),
+                y1 / keras.backend.cast(image_shape[0], dtype=keras.backend.floatx()),
+                x1 / keras.backend.cast(image_shape[1], dtype=keras.backend.floatx()),
+                y2 / keras.backend.cast(image_shape[0], dtype=keras.backend.floatx()),
+                x2 / keras.backend.cast(image_shape[1], dtype=keras.backend.floatx()),
             ], axis=1)
 
             # append the rois to the list of rois
@@ -84,8 +84,8 @@ class RoiAlign(keras.layers.Layer):
 
     def compute_output_shape(self, input_shape):
         return [
-            (input_shape[0][0], None, input_shape[0][2]),
-            (input_shape[0][0], None, self.crop_size[0], self.crop_size[1], input_shape[1][-1])
+            (input_shape[1][0], None, input_shape[1][2]),
+            (input_shape[1][0], None, self.crop_size[0], self.crop_size[1], input_shape[2][-1])
         ]
 
     def compute_mask(self, inputs, mask=None):
