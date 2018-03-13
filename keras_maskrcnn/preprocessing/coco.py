@@ -41,8 +41,9 @@ class CocoGeneratorMask(CocoGenerator):
 
         # some images appear to miss annotations (like image with id 257034)
         if len(annotations_ids) == 0:
+            # we need an annotation to compute targets properly... make an impossible annotation
             annotations = np.array([[0, 0, 1, 1, 0]], dtype=keras.backend.floatx())
-            mask = [np.zeros((image_info['height'], image_info['width'], 1), dtype=np.uint8)]
+            masks = [np.zeros((image_info['height'], image_info['width'], 1), dtype=np.uint8)]
             return annotations, masks
 
         # parse annotations
@@ -139,7 +140,7 @@ class CocoGeneratorMask(CocoGenerator):
 
         # construct the masks batch
         max_masks = max(len(m) for m in masks_group)
-        masks_batch = -1 * np.ones((self.batch_size, max_masks) + max_shape[:-1], dtype=keras.backend.floatx())
+        masks_batch = np.zeros((self.batch_size, max_masks) + max_shape[:-1], dtype=keras.backend.floatx())
         for batch_index, masks in enumerate(masks_group):
             if len(masks) == 0:
                 continue
