@@ -96,7 +96,7 @@ class MaskLoss(keras.layers.Layer):
         return mask_loss
 
     def compute_output_shape(self, input_shape):
-       return ()
+        return ()
 
     def get_config(self):
         config = super(MaskLoss, self).get_config()

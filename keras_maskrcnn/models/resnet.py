@@ -63,9 +63,9 @@ def resnet_retinanet(num_classes, backbone='resnet50', inputs=None, modifier=Non
     # choose default input
     if inputs is None:
         inputs = [
-            keras.layers.Input(shape=(None, None, 3)),
-            keras.layers.Input(shape=(None, 5)),
-            keras.layers.Input(shape=(None, None, None)),
+            keras.layers.Input(shape=(None, None, 3), name='image'),
+            keras.layers.Input(shape=(None, 5), name='annotations'),
+            keras.layers.Input(shape=(None, None, None), name='gt_masks'),
         ]
 
     # create the resnet backbone

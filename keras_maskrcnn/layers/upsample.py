@@ -30,7 +30,7 @@ class Upsample(keras.layers.Layer):
         return keras_retinanet.backend.resize_images(inputs, (self.target_size[0], self.target_size[1]))
 
     def compute_output_shape(self, input_shape):
-        return (input_shape[0],) + self.target_size + (input_shape[-1],)
+        return (input_shape[0],) + tuple(self.target_size) + (input_shape[-1],)
 
     def get_config(self):
         config = super(Upsample, self).get_config()

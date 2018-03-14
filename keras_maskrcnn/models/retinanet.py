@@ -4,8 +4,15 @@ from keras_retinanet.models import retinanet
 from ..layers.roi import RoiAlign
 from ..layers.upsample import Upsample
 from ..layers.mask_loss import MaskLoss
+from ..layers.misc import Shape
 
 custom_objects = retinanet.custom_objects
+custom_objects.update({
+    'RoiAlign' : RoiAlign,
+    'Upsample' : Upsample,
+    'MaskLoss' : MaskLoss,
+    'Shape'    : Shape,
+})
 
 
 def default_mask_model(
@@ -92,7 +99,7 @@ def retinanet_mask(
         roi_submodels = default_roi_submodels(num_classes)
 
     image, annotations, gt_masks = inputs
-    image_shape = keras.layers.Lambda(lambda x: keras.backend.shape(x))(image)
+    image_shape = Shape()(image)
 
     bbox_model = retinanet.retinanet_bbox(inputs=image, num_classes=num_classes, output_fpn=True, nms=False, **kwargs)
 
