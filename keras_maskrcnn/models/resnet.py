@@ -62,19 +62,15 @@ def resnet_retinanet(num_classes, backbone='resnet50', inputs=None, modifier=Non
 
     # choose default input
     if inputs is None:
-        inputs = [
-            keras.layers.Input(shape=(None, None, 3), name='image'),
-            keras.layers.Input(shape=(None, 5), name='annotations'),
-            keras.layers.Input(shape=(None, None, None), name='gt_masks'),
-        ]
+        inputs = keras.layers.Input(shape=(None, None, 3), name='image')
 
     # create the resnet backbone
     if backbone == 'resnet50':
-        resnet = keras_resnet.models.ResNet50(inputs[0], include_top=False, freeze_bn=True)
+        resnet = keras_resnet.models.ResNet50(inputs, include_top=False, freeze_bn=True)
     elif backbone == 'resnet101':
-        resnet = keras_resnet.models.ResNet101(inputs[0], include_top=False, freeze_bn=True)
+        resnet = keras_resnet.models.ResNet101(inputs, include_top=False, freeze_bn=True)
     elif backbone == 'resnet152':
-        resnet = keras_resnet.models.ResNet152(inputs[0], include_top=False, freeze_bn=True)
+        resnet = keras_resnet.models.ResNet152(inputs, include_top=False, freeze_bn=True)
 
     # invoke modifier if given
     if modifier:
@@ -97,17 +93,3 @@ def resnet101_retinanet(num_classes, inputs=None, **kwargs):
 def resnet152_retinanet(num_classes, inputs=None, **kwargs):
     return resnet_retinanet(num_classes=num_classes, backbone='resnet152', inputs=inputs, **kwargs)
 
-
-def ResNet50RetinaNet(inputs, num_classes, **kwargs):
-    warnings.warn("ResNet50RetinaNet is replaced by resnet50_retinanet and will be removed in a future release.")
-    return resnet50_retinanet(num_classes, inputs, *args, **kwargs)
-
-
-def ResNet101RetinaNet(inputs, num_classes, **kwargs):
-    warnings.warn("ResNet101RetinaNet is replaced by resnet101_retinanet and will be removed in a future release.")
-    return resnet101_retinanet(num_classes, inputs, *args, **kwargs)
-
-
-def ResNet152RetinaNet(inputs, num_classes, **kwargs):
-    warnings.warn("ResNet152RetinaNet is replaced by resnet152_retinanet and will be removed in a future release.")
-    return resnet152_retinanet(num_classes, inputs, *args, **kwargs)

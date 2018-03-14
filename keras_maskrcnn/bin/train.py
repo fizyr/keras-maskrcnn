@@ -63,17 +63,9 @@ def create_models(backbone_retinanet, backbone, num_classes, weights, freeze_bac
     # compile model
     training_model.compile(
         loss={
-            'regression_P3'    : keras_retinanet.losses.smooth_l1(),
-            'regression_P4'    : keras_retinanet.losses.smooth_l1(),
-            'regression_P5'    : keras_retinanet.losses.smooth_l1(),
-            'regression_P6'    : keras_retinanet.losses.smooth_l1(),
-            'regression_P7'    : keras_retinanet.losses.smooth_l1(),
-            'classification_P3': keras_retinanet.losses.focal(),
-            'classification_P4': keras_retinanet.losses.focal(),
-            'classification_P5': keras_retinanet.losses.focal(),
-            'classification_P6': keras_retinanet.losses.focal(),
-            'classification_P7': keras_retinanet.losses.focal(),
-            'mask_loss'        : losses.identity,
+            'regression'    : keras_retinanet.losses.smooth_l1(),
+            'classification': keras_retinanet.losses.focal(),
+            'mask_loss'     : losses.identity,
         },
         optimizer=keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
     )

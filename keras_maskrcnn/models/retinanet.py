@@ -88,25 +88,22 @@ def retinanet_mask(
         The order is as defined in submodels. Using default values the output is:
         ```
         [
-            regression_P3, regression_P4, regression_P5, regression_P6, regression_P7,
-            classification_P3, classification_P4, classification_P5, classification_P6, classification_P7,
-            boxes_P3, boxes_P4, boxes_P5, boxes_P6, boxes_P7,
-            detections
+            regression, classification, detections, masks
         ]
         ```
     """
     if roi_submodels is None:
         roi_submodels = default_roi_submodels(num_classes)
 
-    image, annotations, gt_masks = inputs
+    image = inputs
     image_shape = Shape()(image)
 
     bbox_model = retinanet.retinanet_bbox(inputs=image, num_classes=num_classes, output_fpn=True, nms=False, **kwargs)
 
     # parse outputs
-    regression     = bbox_model.outputs[:5]
-    classification = bbox_model.outputs[5:10]
-    other          = bbox_model.outputs[10:-6]
+    regression     = bbox_model.outputs[0]
+    classification = bbox_model.outputs[1]
+    other          = bbox_model.outputs[2:-6]
     fpn            = bbox_model.outputs[-6:-1]
     detections     = bbox_model.outputs[-1]
 
