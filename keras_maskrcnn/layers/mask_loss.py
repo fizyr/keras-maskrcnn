@@ -90,9 +90,8 @@ class MaskLoss(keras.layers.Layer):
         # compute mask loss
         mask_loss = masks - masks_target
         mask_loss = keras.backend.abs(mask_loss)
-        divisor = keras.backend.shape(masks)[0] * keras.backend.shape(masks)[1] * keras.backend.shape(masks[2])
+        divisor = keras.backend.shape(masks)[0] * keras.backend.shape(masks)[1] * keras.backend.shape(masks)[2]
         mask_loss = keras.backend.sum(mask_loss) / keras.backend.maximum(keras.backend.cast(divisor, keras.backend.floatx()), 1)
-
         return mask_loss
 
     def compute_output_shape(self, input_shape):
