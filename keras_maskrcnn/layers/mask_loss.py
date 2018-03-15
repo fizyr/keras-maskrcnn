@@ -12,31 +12,6 @@ class MaskLoss(keras.layers.Layer):
 
         super(MaskLoss, self).__init__(**kwargs)
 
-    """
-    Parameters
-    ----------
-    a: (N, 4) ndarray of float
-    b: (K, 4) ndarray of float
-    Returns
-    -------
-    overlaps: (N, K) ndarray of overlap between boxes and query_boxes
-    """
-    def overlap(self, a, b):
-        area = (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
-
-        iw = keras.backend.minimum(keras.backend.expand_dims(a[:, 2], axis=1), b[:, 2]) - keras.backend.maximum(keras.backend.expand_dims(a[:, 0], axis=1), b[:, 0])
-        ih = keras.backend.minimum(keras.backend.expand_dims(a[:, 3], axis=1), b[:, 3]) - keras.backend.maximum(keras.backend.expand_dims(a[:, 1], axis=1), b[:, 1])
-
-        iw = keras.backend.maximum(iw, 0)
-        ih = keras.backend.maximum(ih, 0)
-
-        ua = keras.backend.expand_dims((a[:, 2] - a[:, 0]) * (a[:, 3] - a[:, 1]), axis=1) + area - iw * ih
-        ua = keras.backend.maximum(ua, keras.backend.epsilon())
-
-        intersection = iw * ih
-
-        return intersection / ua
-
     def call(self, inputs, **kwargs):
         detections, masks, annotations, masks_target = inputs
 

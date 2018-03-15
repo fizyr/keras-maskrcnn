@@ -65,7 +65,7 @@ def create_models(backbone_retinanet, backbone, num_classes, weights, freeze_bac
         loss={
             'regression'    : keras_retinanet.losses.smooth_l1(),
             'classification': keras_retinanet.losses.focal(),
-            'mask_loss'     : losses.identity,
+            'boxes_masks'   : losses.mask(),
         },
         optimizer=keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
     )

@@ -127,7 +127,7 @@ class CocoGeneratorMask(CocoGenerator):
 
         return image_group, annotations_group, masks_group
 
-    def compute_inputs(self, image_group, annotations_group, masks_group):
+    def compute_inputs(self, image_group):
         # get the max image shape
         max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
 
@@ -138,69 +138,45 @@ class CocoGeneratorMask(CocoGenerator):
         for image_index, image in enumerate(image_group):
             image_batch[image_index, :image.shape[0], :image.shape[1], :image.shape[2]] = image
 
-        # construct the masks batch
-        max_masks = max(len(m) for m in masks_group)
-        masks_batch = np.zeros((self.batch_size, max_masks) + max_shape[:-1], dtype=keras.backend.floatx())
-        for batch_index, masks in enumerate(masks_group):
-            if len(masks) == 0:
-                continue
+        return image_batch
 
-            masks = np.stack(masks)
-            masks_batch[batch_index, :masks.shape[0], :masks.shape[1], :masks.shape[2]] = masks
-
-        # construct the annotations batch
-        max_annotations = max(a.shape[0] for a in annotations_group)
-        assert(max_masks == max_annotations)
-        annotations_batch = -1 * np.ones((self.batch_size, max_annotations, 5), dtype=keras.backend.floatx())
-        for batch_index, annotations in enumerate(annotations_group):
-            annotations_batch[batch_index, :annotations.shape[0], :] = annotations
-
-        return [image_batch, annotations_batch, masks_batch]
-
-    def compute_targets(self, image_group, annotations_group):
+    def compute_targets(self, image_group, annotations_group, masks_group):
         # get the max image shape
         max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
 
         # compute labels and regression targets
-        labels_group     = [[]] * self.batch_size
-        regression_group = [[]] * self.batch_size
+        labels_group     = [None] * self.batch_size
+        regression_group = [None] * self.batch_size
         for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
             # compute regression targets
-            labels_group[index], regression_targets, anchors = self.anchor_targets(max_shape, annotations, self.num_classes(), mask_shape=image.shape)
-            num_positive = max(np.sum([np.sum(labels == 1) for labels in labels_group[index]]), 1)
+            labels_group[index], annotations, anchors = self.anchor_targets(max_shape, annotations, self.num_classes(), mask_shape=image.shape)
+            regression_group[index] = bbox_transform(anchors, annotations)
 
-            # append anchor states and normalization value
-            for a, at, lg in zip(anchors, regression_targets, labels_group[index]):
-                regression_group[index].append(bbox_transform(a, at))
+            # append anchor states to regression targets (necessary for filtering 'ignore', 'positive' and 'negative' anchors)
+            anchor_states           = np.max(labels_group[index], axis=1, keepdims=True)
+            regression_group[index] = np.append(regression_group[index], anchor_states, axis=1)
 
-                # append anchor states to regression targets (necessary for filtering 'ignore', 'positive' and 'negative' anchors)
-                # append normalization value (1 / num_positive_anchors)
-                regression_group[index][-1] = np.concatenate([
-                    regression_group[index][-1],
-                    np.max(lg, axis=1, keepdims=True),  # anchor states
-                    np.ones((regression_group[index][-1].shape[0], 1)) * num_positive,  # normalization value
-                ], axis=1)
+        labels_batch     = np.zeros((self.batch_size,) + labels_group[0].shape, dtype=keras.backend.floatx())
+        regression_batch = np.zeros((self.batch_size,) + regression_group[0].shape, dtype=keras.backend.floatx())
 
-            # append normalization value
-            for i in range(len(labels_group[index])):
-                labels_group[index][i] = np.concatenate([
-                    labels_group[index][i],
-                    np.ones((labels_group[index][i].shape[0], 1)) * num_positive,  # normalization value
-                ], axis=1)
-
-        # use labels and regression to construct batches for P3...P7
-        labels_batches     = [np.zeros((self.batch_size,) + lg.shape, dtype=keras.backend.floatx()) for lg in labels_group[0]]
-        regression_batches = [np.zeros((self.batch_size,) + r.shape, dtype=keras.backend.floatx()) for r in regression_group[0]]
-
-        # loop over images
+        # copy all labels and regression values to the batch blob
         for index, (labels, regression) in enumerate(zip(labels_group, regression_group)):
-            # loop over P3...P7 for one image
-            for i in range(len(labels)):
-                # copy data to corresponding batch
-                labels_batches[i][index, ...]     = labels[i]
-                regression_batches[i][index, ...] = regression[i]
+            labels_batch[index, ...]     = labels
+            regression_batch[index, ...] = regression
 
-        return regression_batches + labels_batches + [np.zeros((1,))]  # the last target is for mask loss
+        # copy all annotations / masks to the batch
+        max_annotations = max(a.shape[0] for a in annotations_group)
+        masks_batch     = np.zeros((self.batch_size, max_annotations, 5 + 2 + max_shape[0] * max_shape[1]), dtype=keras.backend.floatx())
+        for index, (annotations, masks) in enumerate(zip(annotations_group, masks_group)):
+            masks_batch[index, :annotations.shape[0], :annotations.shape[1]] = annotations
+            masks_batch[index, :, 5] = max_shape[1]  # width
+            masks_batch[index, :, 6] = max_shape[0]  # height
+
+            # add flattened mask
+            for mask_index, mask in enumerate(masks):
+                masks_batch[index, mask_index, 7:] = mask.flatten()
+
+        return [regression_batch, labels_batch, masks_batch]
 
     def compute_input_output(self, group):
         # load images and annotations
@@ -218,9 +194,9 @@ class CocoGeneratorMask(CocoGenerator):
         image_group, annotations_group, masks_group = self.preprocess_group(image_group, annotations_group, masks_group)
 
         # compute network inputs
-        inputs = self.compute_inputs(image_group, annotations_group, masks_group)
+        inputs = self.compute_inputs(image_group)
 
         # compute network targets
-        targets = self.compute_targets(image_group, annotations_group)
+        targets = self.compute_targets(image_group, annotations_group, masks_group)
 
         return inputs, targets

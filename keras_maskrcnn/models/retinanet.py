@@ -4,14 +4,15 @@ from keras_retinanet.models import retinanet
 from ..layers.roi import RoiAlign
 from ..layers.upsample import Upsample
 from ..layers.mask_loss import MaskLoss
-from ..layers.misc import Shape
+from ..layers.misc import Shape, ConcatenateBoxesMasks
 
 custom_objects = retinanet.custom_objects
 custom_objects.update({
-    'RoiAlign' : RoiAlign,
-    'Upsample' : Upsample,
-    'MaskLoss' : MaskLoss,
-    'Shape'    : Shape,
+    'RoiAlign'              : RoiAlign,
+    'Upsample'              : Upsample,
+    'MaskLoss'              : MaskLoss,
+    'Shape'                 : Shape,
+    'ConcatenateBoxesMasks' : ConcatenateBoxesMasks,
 })
 
 
@@ -88,7 +89,7 @@ def retinanet_mask(
         The order is as defined in submodels. Using default values the output is:
         ```
         [
-            regression, classification, detections, masks
+            regression, classification, boxes_masks, detections, masks
         ]
         ```
     """
@@ -98,26 +99,27 @@ def retinanet_mask(
     image = inputs
     image_shape = Shape()(image)
 
-    bbox_model = retinanet.retinanet_bbox(inputs=image, num_classes=num_classes, output_fpn=True, nms=False, **kwargs)
+    bbox_model = retinanet.retinanet_bbox(inputs=image, num_classes=num_classes, nms=False, **kwargs)
 
     # parse outputs
     regression     = bbox_model.outputs[0]
     classification = bbox_model.outputs[1]
-    other          = bbox_model.outputs[2:-6]
-    fpn            = bbox_model.outputs[-6:-1]
+    other          = bbox_model.outputs[2:-1]
     detections     = bbox_model.outputs[-1]
+    fpn            = [bbox_model.get_layer(name).output for name in ['P3', 'P4', 'P5', 'P6', 'P7']]
 
     # get the region of interest features
     detections, rois = RoiAlign()([image_shape, detections] + fpn)
 
     # estimate masks
+    # TODO: Change this so that it iterates over roi_submodels
     masks = roi_submodels[0][1](rois)
 
-    # compute mask loss
-    mask_loss = MaskLoss(name='mask_loss')([detections, masks, annotations, gt_masks])
+    # concatenate boxes and masks together
+    boxes_masks = ConcatenateBoxesMasks(name='boxes_masks')([detections, masks])
 
     # reconstruct the new output
-    outputs = regression + classification + other + [mask_loss, detections, masks]
+    outputs = [regression, classification] + other + [boxes_masks, detections, masks]
 
     # construct the model
     return keras.models.Model(inputs=inputs, outputs=outputs, name=name)
