@@ -12,11 +12,11 @@ class RoiAlign(keras.layers.Layer):
 
         super(RoiAlign, self).__init__(**kwargs)
 
-    def map_to_level(self, detections, canonical_size=224, canonical_level=1, min_level=0, max_level=4):
-        x1 = detections[:, 0]
-        y1 = detections[:, 1]
-        x2 = detections[:, 2]
-        y2 = detections[:, 3]
+    def map_to_level(self, boxes, canonical_size=224, canonical_level=1, min_level=0, max_level=4):
+        x1 = boxes[:, 0]
+        y1 = boxes[:, 1]
+        x2 = boxes[:, 2]
+        y2 = boxes[:, 3]
 
         w = x2 - x1
         h = y2 - y1
@@ -30,36 +30,41 @@ class RoiAlign(keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         # TODO: Support batch_size > 1
-        detections  = inputs[1][0]
-        fpn         = [i[0] for i in inputs[2:]]
-        image_shape = inputs[0]
+        image_shape    = inputs[0]
+        boxes          = inputs[1][0]
+        classification = inputs[2][0]
+        fpn            = [i[0] for i in inputs[3:]]
 
         # compute best scores for each detection
-        classification = detections[:, 4:]
-        scores         = keras.backend.max(classification, axis=1)
+        scores = keras.backend.max(classification, axis=1)
 
         # select the top k for mask ROI computation
-        _, indices = backend.top_k(scores, k=self.top_k, sorted=False)
-        detections = keras.backend.gather(detections, indices)
+        _, indices     = backend.top_k(scores, k=self.top_k, sorted=False)
+        boxes          = keras.backend.gather(boxes, indices)
+        classification = keras.backend.gather(classification, indices)
 
         # compute from which level to get features from
-        target_levels = self.map_to_level(detections)
+        target_levels = self.map_to_level(boxes)
 
         # process each pyramid independently
-        rois = []
-        ordered_detections = []
+        rois                   = []
+        ordered_boxes          = []
+        ordered_classification = []
         for i in range(len(fpn)):
-            # select the detections from this pyramid level
+            # select the boxes and classification from this pyramid level
             indices = keras_retinanet.backend.where(keras.backend.equal(target_levels, i))
 
-            level_detections = keras_retinanet.backend.gather_nd(detections, indices)
-            ordered_detections.append(level_detections)
+            level_boxes          = keras_retinanet.backend.gather_nd(boxes, indices)
+            level_classification = keras_retinanet.backend.gather_nd(classification, indices)
+
+            ordered_boxes.append(level_boxes)
+            ordered_classification.append(level_classification)
 
             # convert to expected format for crop_and_resize
-            x1 = level_detections[:, 0]
-            y1 = level_detections[:, 1]
-            x2 = level_detections[:, 2]
-            y2 = level_detections[:, 3]
+            x1 = level_boxes[:, 0]
+            y1 = level_boxes[:, 1]
+            x2 = level_boxes[:, 2]
+            y2 = level_boxes[:, 3]
             level_boxes = keras.backend.stack([
                 y1 / keras.backend.cast(image_shape[1], dtype=keras.backend.floatx()),
                 x1 / keras.backend.cast(image_shape[2], dtype=keras.backend.floatx()),
@@ -75,21 +80,23 @@ class RoiAlign(keras.layers.Layer):
                 self.crop_size
             ))
 
-        # reassemble the detections in a different order
-        detections = keras.backend.concatenate(ordered_detections, axis=0)
+        # reassemble the boxes in a different order
+        boxes          = keras.backend.concatenate(ordered_boxes, axis=0)
+        classification = keras.backend.concatenate(ordered_classification, axis=0)
 
-        # concatenate to one big blob
+        # concatenate rois to one blob
         rois = keras.backend.concatenate(rois, axis=0)
-        return [keras.backend.expand_dims(detections, axis=0), keras.backend.expand_dims(rois, axis=0)]
+        return [keras.backend.expand_dims(boxes, axis=0), keras.backend.expand_dims(classification, axis=0), keras.backend.expand_dims(rois, axis=0)]
 
     def compute_output_shape(self, input_shape):
         return [
             (input_shape[1][0], None, input_shape[1][2]),
-            (input_shape[1][0], None, self.crop_size[0], self.crop_size[1], input_shape[2][-1])
+            (input_shape[2][0], None, input_shape[2][2]),
+            (input_shape[1][0], None, self.crop_size[0], self.crop_size[1], input_shape[3][-1])
         ]
 
     def compute_mask(self, inputs, mask=None):
-        return 2 * [None]
+        return 3 * [None]
 
     def get_config(self):
         config = super(RoiAlign, self).get_config()

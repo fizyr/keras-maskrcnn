@@ -1,5 +1,6 @@
 import keras.models
 from keras_retinanet.models import retinanet
+from keras_retinanet.layers import NonMaximumSuppression
 
 from ..layers.roi import RoiAlign
 from ..layers.upsample import Upsample
@@ -89,7 +90,7 @@ def retinanet_mask(
         The order is as defined in submodels. Using default values the output is:
         ```
         [
-            regression, classification, boxes_masks, detections, masks
+            regression, classification, boxes_masks, boxes, masks
         ]
         ```
     """
@@ -105,21 +106,25 @@ def retinanet_mask(
     regression     = bbox_model.outputs[0]
     classification = bbox_model.outputs[1]
     other          = bbox_model.outputs[2:-1]
-    detections     = bbox_model.outputs[-1]
+    boxes          = bbox_model.outputs[-1]
     fpn            = [bbox_model.get_layer(name).output for name in ['P3', 'P4', 'P5', 'P6', 'P7']]
 
     # get the region of interest features
-    detections, rois = RoiAlign()([image_shape, detections] + fpn)
+    top_boxes, top_classification, rois = RoiAlign()([image_shape, boxes, classification] + fpn)
+
+    # optionally apply non maximum suppression
+    if nms:
+        top_classification = NonMaximumSuppression(name='nms')([top_boxes, top_classification])
 
     # estimate masks
     # TODO: Change this so that it iterates over roi_submodels
     masks = roi_submodels[0][1](rois)
 
     # concatenate boxes and masks together
-    boxes_masks = ConcatenateBoxesMasks(name='boxes_masks')([detections, masks])
+    boxes_masks = ConcatenateBoxesMasks(name='boxes_masks')([top_boxes, masks])
 
     # reconstruct the new output
-    outputs = [regression, classification] + other + [boxes_masks, detections, masks]
+    outputs = [regression, classification] + other + [boxes_masks, top_boxes, top_classification, masks]
 
     # construct the model
     return keras.models.Model(inputs=inputs, outputs=outputs, name=name)
