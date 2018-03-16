@@ -3,7 +3,7 @@ import keras_retinanet.backend
 from . import backend
 
 def mask(iou_threshold=0.5, mask_size=(28, 28)):
-    def mask_(y_true, y_pred):
+    def _mask(y_true, y_pred):
         # split up the different predicted blobx
         boxes = y_pred[:, :, :4]
         masks = y_pred[:, :, 4:]
@@ -72,4 +72,4 @@ def mask(iou_threshold=0.5, mask_size=(28, 28)):
         mask_loss = keras.backend.sum(mask_loss) / keras.backend.maximum(keras.backend.cast(divisor, keras.backend.floatx()), 1)
         return mask_loss
 
-    return mask_
+    return _mask
