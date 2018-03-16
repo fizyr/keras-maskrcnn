@@ -66,10 +66,10 @@ def mask(iou_threshold=0.5, mask_size=(28, 28)):
         masks = keras_retinanet.backend.gather_nd(masks, argmax_overlaps_inds)
 
         # compute mask loss
-        mask_loss = masks - masks_target
-        mask_loss = keras.backend.abs(mask_loss)
-        divisor = keras.backend.shape(masks)[0] * keras.backend.shape(masks)[1] * keras.backend.shape(masks)[2]
-        mask_loss = keras.backend.sum(mask_loss) / keras.backend.maximum(keras.backend.cast(divisor, keras.backend.floatx()), 1)
+        mask_loss  = keras.backend.binary_crossentropy(masks_target, masks)
+        normalizer = keras.backend.shape(masks)[0] * keras.backend.shape(masks)[1] * keras.backend.shape(masks)[2]
+        normalizer = keras.backend.maximum(keras.backend.cast(normalizer, keras.backend.floatx()), 1)
+        mask_loss  = keras.backend.sum(mask_loss) / normalizer
         return mask_loss
 
     return _mask
