@@ -3,16 +3,16 @@ from keras_retinanet.models import retinanet
 
 from ..layers.roi import RoiAlign
 from ..layers.upsample import Upsample
-from ..layers.mask_loss import MaskLoss
 from ..layers.misc import Shape, ConcatenateBoxesMasks
+from .. import losses
 
 custom_objects = retinanet.custom_objects
 custom_objects.update({
     'RoiAlign'              : RoiAlign,
     'Upsample'              : Upsample,
-    'MaskLoss'              : MaskLoss,
     'Shape'                 : Shape,
     'ConcatenateBoxesMasks' : ConcatenateBoxesMasks,
+    '_mask'                 : losses.mask(),
 })
 
 
