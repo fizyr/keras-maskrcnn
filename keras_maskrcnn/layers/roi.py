@@ -61,10 +61,10 @@ class RoiAlign(keras.layers.Layer):
             x2 = level_detections[:, 2]
             y2 = level_detections[:, 3]
             level_boxes = keras.backend.stack([
-                y1 / keras.backend.cast(image_shape[0], dtype=keras.backend.floatx()),
-                x1 / keras.backend.cast(image_shape[1], dtype=keras.backend.floatx()),
-                y2 / keras.backend.cast(image_shape[0], dtype=keras.backend.floatx()),
-                x2 / keras.backend.cast(image_shape[1], dtype=keras.backend.floatx()),
+                y1 / keras.backend.cast(image_shape[1], dtype=keras.backend.floatx()),
+                x1 / keras.backend.cast(image_shape[2], dtype=keras.backend.floatx()),
+                y2 / keras.backend.cast(image_shape[1], dtype=keras.backend.floatx()),
+                x2 / keras.backend.cast(image_shape[2], dtype=keras.backend.floatx()),
             ], axis=1)
 
             # append the rois to the list of rois
