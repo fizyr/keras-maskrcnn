@@ -19,7 +19,7 @@ custom_objects.update({
 
 def default_mask_model(
     num_classes,
-    pyramid_feature_size=256,
+    roi_feature_size=256 * 5,
     mask_feature_size=256,
     roi_size=(14, 14),
     mask_size=(28, 28),
@@ -34,7 +34,7 @@ def default_mask_model(
         'activation'         : 'relu',
     }
 
-    inputs  = keras.layers.Input(shape=(None, roi_size[0], roi_size[1], pyramid_feature_size))
+    inputs  = keras.layers.Input(shape=(None, roi_size[0], roi_size[1], roi_feature_size))
     outputs = inputs
     for i in range(4):
         outputs = keras.layers.TimeDistributed(keras.layers.Conv2D(

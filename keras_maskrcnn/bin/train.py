@@ -144,8 +144,6 @@ def create_generators(args):
             'train2017',
             transform_generator=transform_generator,
             batch_size=args.batch_size,
-            image_min_side=600,
-            image_max_side=1000,
         )
 
         validation_generator = CocoGeneratorMask(
