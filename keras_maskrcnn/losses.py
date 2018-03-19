@@ -1,6 +1,7 @@
 import keras.backend
 import keras_retinanet.backend
 from . import backend
+import matplotlib.pyplot as plt
 
 def mask(iou_threshold=0.5, mask_size=(28, 28)):
     def mask_(y_true, y_pred):
@@ -59,17 +60,33 @@ def mask(iou_threshold=0.5, mask_size=(28, 28)):
 
         # gather the predicted masks
         masks = backend.transpose(masks, (0, 3, 1, 2))
+        print("Masks size before gather_nd: ", keras.backend.eval(masks).shape)
+        plt.imshow(keras.backend.eval(masks[1,0,:,:]))
+        plt.show()
+        print("Agrmax_overlap_inds: ", keras.backend.eval(argmax_overlaps_inds))
+        print("Agrmax_overlap_inds size: ", keras.backend.eval(argmax_overlaps_inds).shape)
         argmax_overlaps_inds = keras.backend.stack([
             keras.backend.arange(keras.backend.shape(argmax_overlaps_inds)[0]),
             argmax_overlaps_inds
         ], axis=1)
+        print("Agrmax_overlap_inds: ", keras.backend.eval(argmax_overlaps_inds))
         masks = keras_retinanet.backend.gather_nd(masks, argmax_overlaps_inds)
+        print("Masks size: ", keras.backend.eval(masks).shape)
+        print(keras.backend.eval(masks))
+        plt.imshow(keras.backend.eval(masks[1,:,:]))
+        plt.show()
 
         # compute mask loss
-        mask_loss = masks - masks_target
-        mask_loss = keras.backend.abs(mask_loss)
-        divisor = keras.backend.shape(masks)[0] * keras.backend.shape(masks)[1] * keras.backend.shape(masks)[2]
-        mask_loss = keras.backend.sum(mask_loss) / keras.backend.maximum(keras.backend.cast(divisor, keras.backend.floatx()), 1)
+        divisor    = keras.backend.shape(masks)[0] * keras.backend.shape(masks)[1] * keras.backend.shape(masks)[2]
+        normalizer = keras.backend.maximum(keras.backend.cast(divisor, keras.backend.floatx()), 1)
+        backend_loss = keras.backend.eval(keras.backend.binary_crossentropy(masks_target, masks))
+        print("Shape backend loss: ", backend_loss.shape)
+        import numpy as np
+        plt.imshow(keras.backend.eval(masks_target[1,:,:]))
+        plt.show()
+        plt.imshow(backend_loss[1,:,:])
+        plt.show()
+        mask_loss  = keras.backend.sum(keras.backend.binary_crossentropy(masks_target, masks)) / normalizer
         return mask_loss
 
     return mask_
