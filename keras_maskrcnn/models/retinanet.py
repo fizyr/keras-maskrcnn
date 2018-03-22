@@ -13,7 +13,7 @@ custom_objects.update({
     'Upsample'              : Upsample,
     'Shape'                 : Shape,
     'ConcatenateBoxesMasks' : ConcatenateBoxesMasks,
-    'mask_'                 : losses.mask(),
+    '_mask'                 : losses.mask(),
 })
 
 
