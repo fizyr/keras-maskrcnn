@@ -26,7 +26,6 @@ import tensorflow as tf
 
 import keras_retinanet.losses
 from keras_retinanet.callbacks import RedirectModel
-#from keras_retinanet.callbacks.eval import Evaluate
 from keras_retinanet.utils.transform import random_transform_generator
 from keras_retinanet.utils.keras_version import check_keras_version
 from keras_retinanet.utils.model import freeze as freeze_model
@@ -39,6 +38,7 @@ if __name__ == "__main__" and __package__ is None:
 
 # Change these to absolute imports if you copy this script outside the keras_retinanet package.
 from .. import losses
+#from ..callbacks.eval import Evaluate
 
 
 def get_session():
@@ -106,16 +106,16 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
         )
         callbacks.append(tensorboard_callback)
 
-    #if args.evaluation and validation_generator:
-    #    if args.dataset_type == 'coco':
-    #        from ..callbacks.coco import CocoEval
+    if args.evaluation and validation_generator:
+        if args.dataset_type == 'coco':
+            from ..callbacks.coco import CocoEval
 
-    #        # use prediction model for evaluation
-    #        evaluation = CocoEval(validation_generator)
-    #    else:
-    #        evaluation = Evaluate(validation_generator, tensorboard=tensorboard_callback)
-    #    evaluation = RedirectModel(evaluation, prediction_model)
-    #    callbacks.append(evaluation)
+            # use prediction model for evaluation
+            evaluation = CocoEval(validation_generator)
+        #else:
+        #    evaluation = Evaluate(validation_generator, tensorboard=tensorboard_callback)
+        evaluation = RedirectModel(evaluation, prediction_model)
+        callbacks.append(evaluation)
 
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
         monitor  = 'loss',
