@@ -16,7 +16,7 @@ limitations under the License.
 """
 
 from .generator import Generator
-from ..utils.image import read_image_bgr
+from keras_retinanet.utils.image import read_image_bgr
 
 import numpy as np
 from PIL import Image
@@ -25,6 +25,8 @@ from six import raise_from
 import csv
 import sys
 import os.path
+import cv2
+import numpy as np
 
 
 def _parse(value, function, fmt):
@@ -60,12 +62,15 @@ def _read_annotations(csv_reader, classes):
     result = {}
     for line, row in enumerate(csv_reader):
         try:
-            img_file, x1, y1, x2, y2, class_name = row
+            img_file, x1, y1, x2, y2, class_name, mask_path = row
         except ValueError:
-            raise_from(ValueError('line {}: format should be \'img_file,x1,y1,x2,y2,class_name\' or \'img_file,,,,,\''.format(line)), None)
+            raise_from(ValueError('line {}: format should be \'img_file,x1,y1,x2,y2,class_name,mask_path\' or \'img_file,,,,,\''.format(line)), None)
 
         if img_file not in result:
             result[img_file] = []
+
+        if mask_path not in result:
+            result[mask_path] = []
 
         # If a row contains only an image path, it's an image without annotations.
         if (x1, y1, x2, y2, class_name) == ('', '', '', '', ''):
@@ -86,7 +91,7 @@ def _read_annotations(csv_reader, classes):
         if class_name not in classes:
             raise ValueError('line {}: unknown class name: \'{}\' (classes: {})'.format(line, class_name, classes))
 
-        result[img_file].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2, 'class': class_name})
+        result[img_file].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2, 'class': class_name, 'mask_path': mask_path})
     return result
 
 
@@ -166,14 +171,17 @@ class CSVGenerator(Generator):
     def load_annotations(self, image_index):
         path   = self.image_names[image_index]
         annots = self.image_data[path]
-        boxes  = np.zeros((len(annots), 5))
+
+        # find mask size in order to allocate the right dimension for the annotations
+        annotations  = np.zeros((len(annots), 5))
+        masks        = []
 
         for idx, annot in enumerate(annots):
-            class_name = annot['class']
-            boxes[idx, 0] = float(annot['x1'])
-            boxes[idx, 1] = float(annot['y1'])
-            boxes[idx, 2] = float(annot['x2'])
-            boxes[idx, 3] = float(annot['y2'])
-            boxes[idx, 4] = self.name_to_label(class_name)
+            annotations[idx, 0]  = float(annot['x1'])
+            annotations[idx, 1]  = float(annot['y1'])
+            annotations[idx, 2]  = float(annot['x2'])
+            annotations[idx, 3]  = float(annot['y2'])
+            annotations[idx, 4]  = self.name_to_label(annot['class'])
+            masks.append(cv2.imread(annot['mask_path'], cv2.IMREAD_GRAYSCALE).astype(float))
 
-        return boxes
+        return annotations, masks
