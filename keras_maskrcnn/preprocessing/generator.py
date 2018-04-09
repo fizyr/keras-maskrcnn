@@ -90,7 +90,7 @@ class Generator(object):
 
             # check if all masks have the same size of the respective image
             for idx in range(len(masks)):
-                assert(image.shape == masks[idx].shape), 'Found different image and mask size in image {}'.format(index)
+                assert(image.shape[0:2] == masks[idx].shape), 'Found different image and mask size in image {}'.format(group[index])
 
             # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0 | x2 >= image.shape[1] | y2 >= image.shape[0]
             invalid_indices = np.where(
@@ -132,7 +132,7 @@ class Generator(object):
             for index in range(annotations.shape[0]):
                 annotations[index, :4] = transform_aabb(transform, annotations[index, :4])
 
-        return image, annotations
+        return image, annotations, masks
 
     def resize_image(self, image):
         return resize_image(image, min_side=self.image_min_side, max_side=self.image_max_side)
@@ -151,13 +151,13 @@ class Generator(object):
         image, image_scale = self.resize_image(image)
 
         # resize masks
-        for i in irange(len(masks)):
-            masks[i], _ = self.resize_image(masks[i])
+        for i in range(len(masks)):
+            masks[i], _ = self.resize_image(np.expand_dims(masks[i], axis=-1))
 
         # apply resizing to annotations too
         annotations[:, :4]  *= image_scale
 
-        return image, resized_annotations, masks
+        return image, annotations, masks
 
     def preprocess_group(self, image_group, annotations_group, masks_group):
         for index, (image, annotations, masks) in enumerate(zip(image_group, annotations_group, masks_group)):
