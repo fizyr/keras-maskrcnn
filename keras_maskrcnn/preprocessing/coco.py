@@ -149,7 +149,7 @@ class CocoGeneratorMask(CocoGenerator):
         regression_group = [None] * self.batch_size
         for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
             # compute regression targets
-            labels_group[index], annotations, anchors = self.anchor_targets(max_shape, annotations, self.num_classes(), mask_shape=image.shape)
+            labels_group[index], annotations, anchors = self.compute_anchor_targets(max_shape, annotations, self.num_classes(), mask_shape=image.shape)
             regression_group[index] = bbox_transform(anchors, annotations)
 
             # append anchor states to regression targets (necessary for filtering 'ignore', 'positive' and 'negative' anchors)
