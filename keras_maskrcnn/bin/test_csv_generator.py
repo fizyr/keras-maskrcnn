@@ -6,16 +6,10 @@ import random
 r = lambda: random.randint(0,255)
 
 generator = CSVGenerator(
-		'./data/train.txt',
-		'./data/classes.txt',
+		'/srv/datasets/postnl/train.txt',
+		'/srv/datasets/postnl/classes.txt',
 		base_dir='/srv/datasets/postnl'
 		)
-
-for group_index in range(0,2):
-	group = generator.groups[group_index]
-	image_group       = generator.load_image_group(group)
-	annotations_group = generator.load_annotations_group(group)
-	inputs, targets   = generator.compute_input_output(group)
 
 for index in range(generator.size()):
 
