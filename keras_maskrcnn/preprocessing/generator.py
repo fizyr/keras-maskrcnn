@@ -123,11 +123,12 @@ class Generator(object):
             transform = adjust_transform_for_image(next(self.transform_generator), image, self.transform_parameters.relative_translation)
             image     = apply_transform(transform, image, self.transform_parameters)
 
-            for i in rage(len(masks)):
+            # randomly transform the masks and expand so to have a fake channel dimension
+            for i in range(len(masks)):
                 masks[i] = apply_transform(transform, masks[i], self.transform_parameters)
                 masks[i] = np.expand_dims(masks[i], axis=2)
 
-            # Transform the bounding boxes and the masks in the annotations.
+            # randomly transform the bounding boxes
             annotations = annotations.copy()
             for index in range(annotations.shape[0]):
                 annotations[index, :4] = transform_aabb(transform, annotations[index, :4])
@@ -152,7 +153,7 @@ class Generator(object):
 
         # resize masks
         for i in range(len(masks)):
-            masks[i], _ = self.resize_image(np.expand_dims(masks[i], axis=-1))
+            masks[i], _ = self.resize_image(masks[i])
 
         # apply resizing to annotations too
         annotations[:, :4]  *= image_scale

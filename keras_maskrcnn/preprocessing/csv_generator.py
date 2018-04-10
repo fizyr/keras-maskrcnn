@@ -182,6 +182,8 @@ class CSVGenerator(Generator):
             annotations[idx, 2]  = float(annot['x2'])
             annotations[idx, 3]  = float(annot['y2'])
             annotations[idx, 4]  = self.name_to_label(annot['class'])
-            masks.append(cv2.imread(annot['mask_path'], cv2.IMREAD_GRAYSCALE).astype(float))
+            mask = cv2.imread(annot['mask_path'], cv2.IMREAD_GRAYSCALE).astype(float)
+            mask[np.where(mask > 0)] = 1  # convert from 0-255 to binary mask
+            masks.append(mask)
 
         return annotations, masks
