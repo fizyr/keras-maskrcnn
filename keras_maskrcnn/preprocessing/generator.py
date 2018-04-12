@@ -90,7 +90,7 @@ class Generator(object):
 
             # check if all masks have the same size of the respective image
             for idx in range(len(masks)):
-                assert(image.shape[0:2] == masks[idx].shape), 'Found different image and mask size in image {}'.format(group[index])
+                assert(image.shape[0:2] == masks[idx].shape[0:2]), 'Found different image and mask size in image {}'.format(group[index])
 
             # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0 | x2 >= image.shape[1] | y2 >= image.shape[0]
             invalid_indices = np.where(
