@@ -31,7 +31,7 @@ if __name__ == "__main__" and __package__ is None:
     __package__ = "keras_maskrcnn.bin"
 
 # Change these to absolute imports if you copy this script outside the keras_retinanet package.
-from ..preprocessing.coco import CocoGeneratorMask
+from ..preprocessing.coco import CocoGenerator
 from ..utils.coco_eval import evaluate_coco
 from ..models.resnet import custom_objects
 from keras_retinanet.utils.keras_version import check_keras_version
@@ -72,7 +72,7 @@ def main(args=None):
     model = keras.models.load_model(args.model, custom_objects=custom_objects)
 
     # create a generator for testing data
-    test_generator = CocoGeneratorMask(
+    test_generator = CocoGenerator(
         args.coco_path,
         args.set
     )
