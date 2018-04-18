@@ -36,13 +36,11 @@ def evaluate_coco(generator, model, threshold=0.05):
         image, scale = generator.resize_image(image)
 
         # run network
-        _, _, _, boxes, nms_classification, masks = model.predict_on_batch(np.expand_dims(image, axis=0))
-
-        # clip to image shape
-        boxes[:, :, 0] = np.maximum(0, boxes[:, :, 0])
-        boxes[:, :, 1] = np.maximum(0, boxes[:, :, 1])
-        boxes[:, :, 2] = np.minimum(image.shape[1], boxes[:, :, 2])
-        boxes[:, :, 3] = np.minimum(image.shape[0], boxes[:, :, 3])
+        outputs = model.predict_on_batch(np.expand_dims(image, axis=0))
+        boxes   = outputs[-4]
+        scores  = outputs[-3]
+        labels  = outputs[-2]
+        masks   = outputs[-1]
 
         # correct boxes for image scale
         boxes[0, :, :4] /= scale
