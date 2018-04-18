@@ -47,8 +47,8 @@ def create_generator(args):
         #max_shear=0.1,
         #min_scaling=(0.9, 0.9),
         #max_scaling=(1.1, 1.1),
-        #flip_x_chance=0.5,
-        flip_y_chance=0.5,
+        flip_x_chance=0.5,
+        #flip_y_chance=0.5,
     )
 
     if args.dataset_type == 'coco':
