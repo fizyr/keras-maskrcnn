@@ -22,6 +22,9 @@ import sys
 import cv2
 import numpy as np
 
+sys.path.insert(0,'/home/vcarpani/dev/keras-retinanet')
+
+
 from keras_retinanet.utils.transform import random_transform_generator
 from keras_retinanet.utils.visualization import draw_annotations, draw_boxes, draw_caption
 from keras_retinanet.utils.colors import label_color

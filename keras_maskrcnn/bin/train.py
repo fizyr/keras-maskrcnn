@@ -20,6 +20,8 @@ import argparse
 import os
 import sys
 
+sys.path.insert(0,'/home/vcarpani/dev/keras-retinanet')
+
 import keras
 import keras.preprocessing.image
 import tensorflow as tf

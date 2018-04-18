@@ -31,7 +31,7 @@ def default_mask_model(
         'padding'            : 'same',
         'kernel_initializer' : keras.initializers.normal(mean=0.0, stddev=0.01, seed=None),
         'bias_initializer'   : 'zeros',
-        'activation'         : 'relu',
+        #'activation'         : 'relu',
     }
 
     inputs  = keras.layers.Input(shape=(None, roi_size[0], roi_size[1], pyramid_feature_size))
@@ -41,7 +41,9 @@ def default_mask_model(
             filters=mask_feature_size,
             **options,
         ), name='roi_mask_{}'.format(i))(outputs)
-
+        output = keras.layers.TimeDistributed(keras.layers.LeakyReLU(
+            alpha=0.3
+        ), name='leaky_relu_{}'.format(i))(outputs)
     # perform upsampling + conv instead of deconv as in the paper
     # https://distill.pub/2016/deconv-checkerboard/
     outputs = keras.layers.TimeDistributed(
