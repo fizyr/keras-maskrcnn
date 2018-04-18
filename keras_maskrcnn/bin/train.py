@@ -137,9 +137,9 @@ def create_generators(args):
 
     if args.dataset_type == 'coco':
         # import here to prevent unnecessary dependency on cocoapi
-        from ..preprocessing.coco import CocoGeneratorMask
+        from ..preprocessing.coco import CocoGenerator
 
-        train_generator = CocoGeneratorMask(
+        train_generator = CocoGenerator(
             args.coco_path,
             'train2017',
             transform_generator=transform_generator,
@@ -148,7 +148,7 @@ def create_generators(args):
             image_max_side=1000,
         )
 
-        validation_generator = CocoGeneratorMask(
+        validation_generator = CocoGenerator(
             args.coco_path,
             'val2017',
             batch_size=args.batch_size

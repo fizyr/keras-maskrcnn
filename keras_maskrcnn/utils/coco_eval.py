@@ -36,27 +36,28 @@ def evaluate_coco(generator, model, threshold=0.05):
         image, scale = generator.resize_image(image)
 
         # run network
-        _, _, _, boxes, nms_classification, masks = model.predict_on_batch(np.expand_dims(image, axis=0))
-
-        # clip to image shape
-        boxes[:, :, 0] = np.maximum(0, boxes[:, :, 0])
-        boxes[:, :, 1] = np.maximum(0, boxes[:, :, 1])
-        boxes[:, :, 2] = np.minimum(image.shape[1], boxes[:, :, 2])
-        boxes[:, :, 3] = np.minimum(image.shape[0], boxes[:, :, 3])
+        outputs = model.predict_on_batch(np.expand_dims(image, axis=0))
+        boxes   = outputs[-4]
+        scores  = outputs[-3]
+        labels  = outputs[-2]
+        masks   = outputs[-1]
 
         # correct boxes for image scale
-        boxes[0, :, :4] /= scale
+        boxes /= scale
 
         # change to (x, y, w, h) (MS COCO standard)
-        boxes[:, :, 2] -= boxes[:, :, 0]
-        boxes[:, :, 3] -= boxes[:, :, 1]
+        boxes[..., 2] -= boxes[..., 0]
+        boxes[..., 3] -= boxes[..., 1]
 
         # compute predicted labels and scores
-        for i, j in np.transpose(np.where(nms_classification[0, :, :] > threshold)):
-            b = boxes[0, i, :].astype(int)  # box (x, y, w, h) as one int vector
+        for box, score, label, mask in zip(boxes[0], scores[0], labels[0], masks[0]):
+            # scores are sorted by the network
+            if score < threshold:
+                break
 
-            mask = masks[0, i, :, :, j]
-            mask = cv2.resize(mask, (boxes[0, i, 2], boxes[0, i, 3]))
+            b = box.astype(int)  # box (x, y, w, h) as one int vector
+
+            mask = cv2.resize(mask[:, :, label], (b[2], b[3]))
             mask = (mask > 0.5).astype(np.uint8)  # binarize for encoding as RLE
 
             segmentation = np.zeros((image_shape[0], image_shape[1]), dtype=np.uint8)
@@ -66,9 +67,9 @@ def evaluate_coco(generator, model, threshold=0.05):
             # append boxes for each positively labeled class
             image_result = {
                 'image_id'    : generator.image_ids[index],
-                'category_id' : generator.label_to_coco_label(j),
-                'score'       : float(nms_classification[0, i, j]),
-                'bbox'        : boxes[0, i, :].tolist(),
+                'category_id' : generator.label_to_coco_label(label),
+                'score'       : float(score),
+                'bbox'        : b.tolist(),
                 'segmentation': segmentation
             }
 

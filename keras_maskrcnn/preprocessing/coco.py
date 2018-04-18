@@ -15,19 +15,77 @@ limitations under the License.
 """
 import numpy as np
 import cv2
-
 import keras
+import os
 
-from keras_retinanet.preprocessing.coco import CocoGenerator
-from keras_retinanet.utils.anchors import bbox_transform
-from keras_retinanet.utils.image import (
-    adjust_transform_for_image,
-    apply_transform,
-)
-from keras_retinanet.utils.transform import transform_aabb
+from pycocotools.coco import COCO
 
+from .generator import Generator
+from keras_retinanet.utils.image import read_image_bgr
 
-class CocoGeneratorMask(CocoGenerator):
+class CocoGenerator(Generator):
+    def __init__(
+            self,
+            data_dir,
+            set_name,
+            **kwargs):
+        self.data_dir  = data_dir
+        self.set_name  = set_name
+        self.coco      = COCO(os.path.join(data_dir, 'annotations', 'instances_' + set_name + '.json'))
+        self.image_ids = self.coco.getImgIds()
+
+        self.load_classes()
+
+        super(CocoGenerator, self).__init__(**kwargs)
+
+    def load_classes(self):
+        # load class names (name -> label)
+        categories = self.coco.loadCats(self.coco.getCatIds())
+        categories.sort(key=lambda x: x['id'])
+
+        self.classes             = {}
+        self.coco_labels         = {}
+        self.coco_labels_inverse = {}
+        for c in categories:
+            self.coco_labels[len(self.classes)] = c['id']
+            self.coco_labels_inverse[c['id']] = len(self.classes)
+            self.classes[c['name']] = len(self.classes)
+
+        # also load the reverse (label -> name)
+        self.labels = {}
+        for key, value in self.classes.items():
+            self.labels[value] = key
+
+    def size(self):
+        return len(self.image_ids)
+
+    def num_classes(self):
+        return len(self.classes)
+
+    def name_to_label(self, name):
+        return self.classes[name]
+
+    def label_to_name(self, label):
+        return self.labels[label]
+
+    def coco_label_to_label(self, coco_label):
+        return self.coco_labels_inverse[coco_label]
+
+    def coco_label_to_name(self, coco_label):
+        return self.label_to_name(self.coco_label_to_label(coco_label))
+
+    def label_to_coco_label(self, label):
+        return self.coco_labels[label]
+
+    def image_aspect_ratio(self, image_index):
+        image = self.coco.loadImgs(self.image_ids[image_index])[0]
+        return float(image['width']) / float(image['height'])
+
+    def load_image(self, image_index):
+        image_info = self.coco.loadImgs(self.image_ids[image_index])[0]
+        path       = os.path.join(self.data_dir, 'images', self.set_name, image_info['file_name'])
+        return read_image_bgr(path)
+
     def load_annotations(self, image_index):
         # get image info
         image_info = self.coco.loadImgs(self.image_ids[image_index])[0]
@@ -79,124 +137,3 @@ class CocoGeneratorMask(CocoGenerator):
 
         return annotations, masks
 
-    def random_transform_group_entry(self, image, annotations, masks):
-        # randomly transform both image and annotations
-        if self.transform_generator:
-            transform = adjust_transform_for_image(next(self.transform_generator), image, self.transform_parameters.relative_translation)
-            image     = apply_transform(transform, image, self.transform_parameters)
-
-            for i in range(len(masks)):
-                masks[i] = apply_transform(transform, masks[i], self.transform_parameters)
-                masks[i] = np.expand_dims(masks[i], axis=2)
-
-            # Transform the bounding boxes in the annotations.
-            annotations = annotations.copy()
-            for index in range(annotations.shape[0]):
-                annotations[index, :4] = transform_aabb(transform, annotations[index, :4])
-
-        return image, annotations, masks
-
-    def preprocess_group_entry(self, image, annotations, masks):
-        # preprocess the image
-        image = self.preprocess_image(image)
-
-        # randomly transform image and annotations
-        image, annotations, masks = self.random_transform_group_entry(image, annotations, masks)
-
-        # resize image
-        image, image_scale = self.resize_image(image)
-
-        # resize masks
-        for i in range(len(masks)):
-            masks[i], _ = self.resize_image(masks[i])
-
-        # apply resizing to annotations too
-        annotations[:, :4] *= image_scale
-
-        return image, annotations, masks
-
-    def preprocess_group(self, image_group, annotations_group, masks_group):
-        for index, (image, annotations, masks) in enumerate(zip(image_group, annotations_group, masks_group)):
-            # preprocess a single group entry
-            image, annotations, masks = self.preprocess_group_entry(image, annotations, masks)
-
-            # copy processed data back to group
-            image_group[index]       = image
-            annotations_group[index] = annotations
-            masks_group[index]       = masks
-
-        return image_group, annotations_group, masks_group
-
-    def compute_inputs(self, image_group):
-        # get the max image shape
-        max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
-
-        # construct an image batch object
-        image_batch = np.zeros((self.batch_size,) + max_shape, dtype=keras.backend.floatx())
-
-        # copy all images to the upper left part of the image batch object
-        for image_index, image in enumerate(image_group):
-            image_batch[image_index, :image.shape[0], :image.shape[1], :image.shape[2]] = image
-
-        return image_batch
-
-    def compute_targets(self, image_group, annotations_group, masks_group):
-        # get the max image shape
-        max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
-
-        # compute labels and regression targets
-        labels_group     = [None] * self.batch_size
-        regression_group = [None] * self.batch_size
-        for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
-            # compute regression targets
-            labels_group[index], annotations, anchors = self.compute_anchor_targets(max_shape, annotations, self.num_classes(), mask_shape=image.shape)
-            regression_group[index] = bbox_transform(anchors, annotations)
-
-            # append anchor states to regression targets (necessary for filtering 'ignore', 'positive' and 'negative' anchors)
-            anchor_states           = np.max(labels_group[index], axis=1, keepdims=True)
-            regression_group[index] = np.append(regression_group[index], anchor_states, axis=1)
-
-        labels_batch     = np.zeros((self.batch_size,) + labels_group[0].shape, dtype=keras.backend.floatx())
-        regression_batch = np.zeros((self.batch_size,) + regression_group[0].shape, dtype=keras.backend.floatx())
-
-        # copy all labels and regression values to the batch blob
-        for index, (labels, regression) in enumerate(zip(labels_group, regression_group)):
-            labels_batch[index, ...]     = labels
-            regression_batch[index, ...] = regression
-
-        # copy all annotations / masks to the batch
-        max_annotations = max(a.shape[0] for a in annotations_group)
-        masks_batch     = np.zeros((self.batch_size, max_annotations, 5 + 2 + max_shape[0] * max_shape[1]), dtype=keras.backend.floatx())
-        for index, (annotations, masks) in enumerate(zip(annotations_group, masks_group)):
-            masks_batch[index, :annotations.shape[0], :annotations.shape[1]] = annotations
-            masks_batch[index, :, 5] = max_shape[1]  # width
-            masks_batch[index, :, 6] = max_shape[0]  # height
-
-            # add flattened mask
-            for mask_index, mask in enumerate(masks):
-                masks_batch[index, mask_index, 7:] = mask.flatten()
-
-        return [regression_batch, labels_batch, masks_batch]
-
-    def compute_input_output(self, group):
-        # load images and annotations
-        image_group       = self.load_image_group(group)
-        annotations_group = self.load_annotations_group(group)
-
-        # split annotations and masks
-        masks_group       = [m for _, m in annotations_group]
-        annotations_group = [a for a, _ in annotations_group]
-
-        # check validity of annotations
-        image_group, annotations_group = self.filter_annotations(image_group, annotations_group, group)
-
-        # perform preprocessing steps
-        image_group, annotations_group, masks_group = self.preprocess_group(image_group, annotations_group, masks_group)
-
-        # compute network inputs
-        inputs = self.compute_inputs(image_group)
-
-        # compute network targets
-        targets = self.compute_targets(image_group, annotations_group, masks_group)
-
-        return inputs, targets

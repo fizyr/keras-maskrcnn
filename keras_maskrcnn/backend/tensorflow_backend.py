@@ -17,10 +17,6 @@ limitations under the License.
 import tensorflow
 
 
-def top_k(*args, **kwargs):
-    return tensorflow.nn.top_k(*args, **kwargs)
-
-
 def crop_and_resize(*args, **kwargs):
     return tensorflow.image.crop_and_resize(*args, **kwargs)
 

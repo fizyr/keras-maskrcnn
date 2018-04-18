@@ -6,7 +6,7 @@ from .. import backend
 
 
 class RoiAlign(keras.layers.Layer):
-    def __init__(self, top_k=1000, crop_size=(14, 14), **kwargs):
+    def __init__(self, top_k=500, crop_size=(14, 14), **kwargs):
         self.crop_size = crop_size
         self.top_k = top_k
 
@@ -39,7 +39,7 @@ class RoiAlign(keras.layers.Layer):
         scores = keras.backend.max(classification, axis=1)
 
         # select the top k for mask ROI computation
-        _, indices     = backend.top_k(scores, k=self.top_k, sorted=False)
+        _, indices     = keras_retinanet.backend.top_k(scores, k=self.top_k, sorted=False)
         boxes          = keras.backend.gather(boxes, indices)
         classification = keras.backend.gather(classification, indices)
 
