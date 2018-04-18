@@ -125,7 +125,7 @@ def retinanet_mask(
     boxes_masks = ConcatenateBoxesMasks(name='boxes_masks')([top_boxes, masks])
 
     # perform detection filtering
-    detections = keras_retinanet.layers.FilterDetections(nms=nms, name='filtered_detections')([boxes, classification] + other + [masks])
+    detections = keras_retinanet.layers.FilterDetections(nms=nms, name='filtered_detections')([top_boxes, top_classification] + other + [masks])
 
     # reconstruct the new output
     outputs = [regression, classification] + other + [boxes_masks] + detections
