@@ -30,7 +30,7 @@ from keras_retinanet.utils.image import (
     preprocess_image,
     resize_image,
 )
-from ..utils.transform import transform_aabb
+from keras_retinanet.utils.transform import transform_aabb
 
 
 class Generator(object):
