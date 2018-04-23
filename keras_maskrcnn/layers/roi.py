@@ -39,7 +39,7 @@ class RoiAlign(keras.layers.Layer):
         scores = keras.backend.max(classification, axis=1)
 
         # select the top k for mask ROI computation
-        _, indices     = keras_retinanet.backend.top_k(scores, k=self.top_k, sorted=False)
+        _, indices     = keras_retinanet.backend.top_k(scores, k=keras.backend.minimum(self.top_k, keras.backend.shape(boxes)[0]), sorted=False)
         boxes          = keras.backend.gather(boxes, indices)
         classification = keras.backend.gather(classification, indices)
 
