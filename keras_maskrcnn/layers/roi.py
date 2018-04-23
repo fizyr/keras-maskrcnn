@@ -31,9 +31,9 @@ class RoiAlign(keras.layers.Layer):
     def call(self, inputs, **kwargs):
         # TODO: Support batch_size > 1
         image_shape    = inputs[0]
-        boxes          = inputs[1][0]
-        classification = inputs[2][0]
-        fpn            = [i[0] for i in inputs[3:]]
+        boxes          = keras.backend.stop_gradient(inputs[1][0])
+        classification = keras.backend.stop_gradient(inputs[2][0])
+        fpn            = [keras.backend.stop_gradient(i[0]) for i in inputs[3:]]
 
         # compute best scores for each detection
         scores = keras.backend.max(classification, axis=1)
