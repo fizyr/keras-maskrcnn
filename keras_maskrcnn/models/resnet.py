@@ -19,47 +19,17 @@ import warnings
 import keras
 import keras_resnet
 import keras_resnet.models
-from ..models import retinanet
+import keras_retinanet.models.resnet
+from ..models import retinanet, Backbone
 
-resnet_filename = 'ResNet-{}-model.keras.h5'
-resnet_resource = 'https://github.com/fizyr/keras-models/releases/download/v0.0.1/{}'.format(resnet_filename)
-
-custom_objects = retinanet.custom_objects.copy()
-custom_objects.update(keras_resnet.custom_objects)
-
-allowed_backbones = ['resnet50', 'resnet101', 'resnet152']
-
-
-def download_imagenet(backbone):
-    validate_backbone(backbone)
-
-    backbone = int(backbone.replace('resnet', ''))
-
-    filename = resnet_filename.format(backbone)
-    resource = resnet_resource.format(backbone)
-    if backbone == 50:
-        checksum = '3e9f4e4f77bbe2c9bec13b53ee1c2319'
-    elif backbone == 101:
-        checksum = '05dc86924389e5b401a9ea0348a3213c'
-    elif backbone == 152:
-        checksum = '6ee11ef2b135592f8031058820bb9e71'
-
-    return keras.applications.imagenet_utils.get_file(
-        filename,
-        resource,
-        cache_subdir='models',
-        md5_hash=checksum
-    )
+class ResNetBackbone(Backbone, keras_retinanet.models.resnet.ResNetBackbone):
+    def maskrcnn(self, *args, **kwargs):
+        """ Returns a maskrcnn model using the correct backbone.
+        """
+        return resnet_maskrcnn(*args, backbone=self.backbone, **kwargs)
 
 
-def validate_backbone(backbone):
-    if backbone not in allowed_backbones:
-        raise ValueError('Backbone (\'{}\') not in allowed backbones ({}).'.format(backbone, allowed_backbones))
-
-
-def resnet_retinanet(num_classes, backbone='resnet50', inputs=None, modifier=None, **kwargs):
-    validate_backbone(backbone)
-
+def resnet_maskrcnn(num_classes, backbone='resnet50', inputs=None, modifier=None, **kwargs):
     # choose default input
     if inputs is None:
         inputs = keras.layers.Input(shape=(None, None, 3), name='image')
@@ -82,14 +52,14 @@ def resnet_retinanet(num_classes, backbone='resnet50', inputs=None, modifier=Non
     return model
 
 
-def resnet50_retinanet(num_classes, inputs=None, **kwargs):
-    return resnet_retinanet(num_classes=num_classes, backbone='resnet50', inputs=inputs, **kwargs)
+def resnet50_maskrcnn(num_classes, inputs=None, **kwargs):
+    return resnet_maskrcnn(num_classes=num_classes, backbone='resnet50', inputs=inputs, **kwargs)
 
 
-def resnet101_retinanet(num_classes, inputs=None, **kwargs):
-    return resnet_retinanet(num_classes=num_classes, backbone='resnet101', inputs=inputs, **kwargs)
+def resnet101_maskrcnn(num_classes, inputs=None, **kwargs):
+    return resnet_maskrcnn(num_classes=num_classes, backbone='resnet101', inputs=inputs, **kwargs)
 
 
-def resnet152_retinanet(num_classes, inputs=None, **kwargs):
-    return resnet_retinanet(num_classes=num_classes, backbone='resnet152', inputs=inputs, **kwargs)
+def resnet152_maskrcnn(num_classes, inputs=None, **kwargs):
+    return resnet_maskrcnn(num_classes=num_classes, backbone='resnet152', inputs=inputs, **kwargs)
 

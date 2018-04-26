@@ -38,6 +38,7 @@ if __name__ == "__main__" and __package__ is None:
 
 # Change these to absolute imports if you copy this script outside the keras_retinanet package.
 from .. import losses
+from .. import models
 #from ..callbacks.eval import Evaluate
 
 
@@ -56,7 +57,7 @@ def model_with_weights(model, weights, skip_mismatch):
 def create_models(backbone_retinanet, backbone, num_classes, weights, freeze_backbone=False):
     modifier = freeze_model if freeze_backbone else None
 
-    model            = model_with_weights(backbone_retinanet(num_classes, backbone=backbone, nms=True, modifier=modifier), weights=weights, skip_mismatch=True)
+    model            = model_with_weights(backbone_retinanet(num_classes, nms=True, modifier=modifier), weights=weights, skip_mismatch=True)
     training_model   = model
     prediction_model = model
 
@@ -144,14 +145,12 @@ def create_generators(args):
             'train2017',
             transform_generator=transform_generator,
             batch_size=args.batch_size,
-            image_min_side=600,
-            image_max_side=1000,
         )
 
         validation_generator = CocoGeneratorMask(
             args.coco_path,
             'val2017',
-            batch_size=args.batch_size
+            batch_size=args.batch_size,
         )
     #elif args.dataset_type == 'pascal':
     #    train_generator = PascalVocGenerator(
@@ -222,15 +221,6 @@ def check_args(parsed_args):
     :return: parsed_args
     """
 
-    if 'resnet' in parsed_args.backbone:
-        from ..models.resnet import validate_backbone
-    elif 'mobilenet' in parsed_args.backbone:
-        from ..models.mobilenet import validate_backbone
-    else:
-        raise NotImplementedError('Backbone \'{}\' not implemented.'.format(parsed_args.backbone))
-
-    validate_backbone(parsed_args.backbone)
-
     return parsed_args
 
 
@@ -289,6 +279,9 @@ def main(args=None):
     # make sure keras is the minimum required version
     check_keras_version()
 
+    # create object that stores backbone information
+    backbone = models.backbone(args.backbone)
+
     # optionally choose specific GPU
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -297,28 +290,21 @@ def main(args=None):
     # create the generators
     train_generator, validation_generator = create_generators(args)
 
-    if 'resnet' in args.backbone:
-        from ..models.resnet import resnet_retinanet as retinanet, custom_objects, download_imagenet
-    #elif 'mobilenet' in args.backbone:
-    #    from ..models.mobilenet import mobilenet_retinanet as retinanet, custom_objects, download_imagenet
-    else:
-        raise NotImplementedError('Backbone \'{}\' not implemented.'.format(args.backbone))
-
     # create the model
     if args.snapshot is not None:
         print('Loading model, this may take a second...')
-        model            = keras.models.load_model(args.snapshot, custom_objects=custom_objects)
+        model            = models.load_model(args.snapshot, backbone=args.backbone)
         training_model   = model
         prediction_model = model
     else:
         weights = args.weights
         # default to imagenet if nothing else is specified
         if weights is None and args.imagenet_weights:
-            weights = download_imagenet(args.backbone)
+            weights = backbone.download_imagenet(args.backbone)
 
         print('Creating model, this may take a second...')
         model, training_model, prediction_model = create_models(
-            backbone_retinanet=retinanet,
+            backbone_retinanet=backbone.maskrcnn,
             backbone=args.backbone,
             num_classes=train_generator.num_classes(),
             weights=weights,
