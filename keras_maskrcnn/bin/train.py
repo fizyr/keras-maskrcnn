@@ -54,7 +54,7 @@ def model_with_weights(model, weights, skip_mismatch):
     return model
 
 
-def create_models(backbone_retinanet, backbone, num_classes, weights, freeze_backbone=False):
+def create_models(backbone_retinanet, num_classes, weights, freeze_backbone=False):
     modifier = freeze_model if freeze_backbone else None
 
     model            = model_with_weights(backbone_retinanet(num_classes, nms=True, modifier=modifier), weights=weights, skip_mismatch=True)
@@ -293,7 +293,7 @@ def main(args=None):
     # create the model
     if args.snapshot is not None:
         print('Loading model, this may take a second...')
-        model            = models.load_model(args.snapshot, backbone=args.backbone)
+        model            = models.load_model(args.snapshot, backbone_name=args.backbone)
         training_model   = model
         prediction_model = model
     else:
@@ -305,7 +305,6 @@ def main(args=None):
         print('Creating model, this may take a second...')
         model, training_model, prediction_model = create_models(
             backbone_retinanet=backbone.maskrcnn,
-            backbone=args.backbone,
             num_classes=train_generator.num_classes(),
             weights=weights,
             freeze_backbone=args.freeze_backbone

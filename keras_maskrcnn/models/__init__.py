@@ -3,8 +3,8 @@ import keras_retinanet.models
 class Backbone(keras_retinanet.models.Backbone):
     """ This class stores additional information on backbones.
     """
-    def __init__(self, backbone):
-        super(Backbone, self).__init__(backbone)
+    def __init__(self, backbone_name):
+        super(Backbone, self).__init__(backbone_name)
 
         # a dictionary mapping custom layer names to the correct classes
         from ..layers.roi import RoiAlign
@@ -24,25 +24,25 @@ class Backbone(keras_retinanet.models.Backbone):
         """
         raise NotImplementedError('maskrcnn method not implemented.')
 
-def backbone(backbone):
-    """ Returns a backbone object for the given backbone.
+def backbone(backbone_name):
+    """ Returns a backbone object for the given backbone_name.
     """
-    if 'resnet' in backbone:
+    if 'resnet' in backbone_name:
         from .resnet import ResNetBackbone as b
     else:
-        raise NotImplementedError('Backbone class for  \'{}\' not implemented.'.format(backbone))
+        raise NotImplementedError('Backbone class for  \'{}\' not implemented.'.format(backbone_name))
 
-    return b(backbone)
+    return b(backbone_name)
 
 
-def load_model(filepath, backbone='resnet50'):
+def load_model(filepath, backbone_name='resnet50'):
     """ Loads a retinanet model using the correct custom objects.
 
     # Arguments
         filepath: one of the following:
             - string, path to the saved model, or
             - h5py.File object from which to load the model
-        backbone: Backbone with which the model was trained.
+        backbone_name: Backbone with which the model was trained.
 
     # Returns
         A keras.models.Model object.
@@ -52,4 +52,4 @@ def load_model(filepath, backbone='resnet50'):
         ValueError: In case of an invalid savefile.
     """
     import keras.models
-    return keras.models.load_model(filepath, custom_objects=backbone(backbone).custom_objects)
+    return keras.models.load_model(filepath, custom_objects=backbone(backbone_name).custom_objects)

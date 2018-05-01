@@ -31,9 +31,9 @@ if __name__ == "__main__" and __package__ is None:
     __package__ = "keras_maskrcnn.bin"
 
 # Change these to absolute imports if you copy this script outside the keras_retinanet package.
+from .. import models
 from ..preprocessing.coco import CocoGeneratorMask
 from ..utils.coco_eval import evaluate_coco
-from ..models.resnet import custom_objects
 from keras_retinanet.utils.keras_version import check_keras_version
 
 def get_session():
@@ -46,6 +46,7 @@ def parse_args(args):
     parser = argparse.ArgumentParser(description='Simple evaluation script for COCO object segmentation.')
     parser.add_argument('model', help='Path to Mask-RCNN model.')
     parser.add_argument('coco_path', help='Path to COCO directory (ie. /tmp/COCO).')
+    parser.add_argument('--backbone', help='The backbone of the model.', default='resnet50')
     parser.add_argument('--gpu', help='Id of the GPU to use (as reported by nvidia-smi).')
     parser.add_argument('--set', help='Name of the set file to evaluate (defaults to val2017).', default='val2017')
     parser.add_argument('--score-threshold', help='Threshold on score to filter detections with (defaults to 0.05).', default=0.05, type=float)
@@ -69,7 +70,7 @@ def main(args=None):
 
     # create the model
     print('Loading model, this may take a second...')
-    model = keras.models.load_model(args.model, custom_objects=custom_objects)
+    model = models.load_model(args.model, backbone_name=args.backbone)
 
     # create a generator for testing data
     test_generator = CocoGeneratorMask(
