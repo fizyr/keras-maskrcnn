@@ -4,7 +4,7 @@ from . import backend
 
 def mask(iou_threshold=0.5, mask_size=(28, 28)):
     def _mask(y_true, y_pred):
-        # split up the different predicted blobx
+        # split up the different predicted blobs
         boxes = y_pred[:, :, :4]
         masks = y_pred[:, :, 4:]
 
@@ -41,10 +41,10 @@ def mask(iou_threshold=0.5, mask_size=(28, 28)):
         x2 = boxes[:, 2]
         y2 = boxes[:, 3]
         boxes = keras.backend.stack([
-            y1 / keras.backend.cast(height, dtype=keras.backend.floatx()),
-            x1 / keras.backend.cast(width, dtype=keras.backend.floatx()),
-            y2 / keras.backend.cast(height, dtype=keras.backend.floatx()),
-            x2 / keras.backend.cast(width, dtype=keras.backend.floatx()),
+            y1 / (keras.backend.cast(height, dtype=keras.backend.floatx()) - 1),
+            x1 / (keras.backend.cast(width, dtype=keras.backend.floatx()) - 1),
+            (y2 - 1) / (keras.backend.cast(height, dtype=keras.backend.floatx()) - 1),
+            (x2 - 1) / (keras.backend.cast(width, dtype=keras.backend.floatx()) - 1),
         ], axis=1)
 
         # crop and resize masks_target
