@@ -34,6 +34,7 @@ def mask(iou_threshold=0.5, mask_size=(28, 28)):
         boxes                = keras_retinanet.backend.gather_nd(boxes, indices)
         masks                = keras_retinanet.backend.gather_nd(masks, indices)
         argmax_overlaps_inds = keras.backend.cast(keras_retinanet.backend.gather_nd(argmax_overlaps_inds, indices), 'int32')
+        labels               = keras.backend.cast(keras.backend.gather(annotations[:, 4], argmax_overlaps_inds), 'int32')
 
         # make normalized boxes
         x1 = boxes[:, 0]
@@ -57,13 +58,13 @@ def mask(iou_threshold=0.5, mask_size=(28, 28)):
         )
         masks_target = masks_target[:, :, :, 0]  # remove fake channel dimension
 
-        # gather the predicted masks
+        # gather the predicted masks using the annotation label
         masks = backend.transpose(masks, (0, 3, 1, 2))
-        argmax_overlaps_inds = keras.backend.stack([
-            keras.backend.arange(keras.backend.shape(argmax_overlaps_inds)[0]),
-            argmax_overlaps_inds
+        label_indices = keras.backend.stack([
+            keras.backend.arange(keras.backend.shape(labels)[0]),
+            labels
         ], axis=1)
-        masks = keras_retinanet.backend.gather_nd(masks, argmax_overlaps_inds)
+        masks = keras_retinanet.backend.gather_nd(masks, label_indices)
 
         # compute mask loss
         mask_loss  = keras.backend.binary_crossentropy(masks_target, masks)
