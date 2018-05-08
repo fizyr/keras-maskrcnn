@@ -30,16 +30,16 @@ class RoiAlign(keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         # TODO: Support batch_size > 1
-        image_shape    = inputs[0]
-        boxes          = inputs[1][0]
-        classification = inputs[2][0]
-        fpn            = [i[0] for i in inputs[3:]]
+        image_shape    = keras.backend.cast(inputs[0], keras.backend.floatx())
+        boxes          = keras.backend.stop_gradient(inputs[1][0])
+        classification = keras.backend.stop_gradient(inputs[2][0])
+        fpn            = [keras.backend.stop_gradient(i[0]) for i in inputs[3:]]
 
         # compute best scores for each detection
         scores = keras.backend.max(classification, axis=1)
 
         # select the top k for mask ROI computation
-        _, indices     = keras_retinanet.backend.top_k(scores, k=self.top_k, sorted=False)
+        _, indices     = keras_retinanet.backend.top_k(scores, k=keras.backend.minimum(self.top_k, keras.backend.shape(boxes)[0]), sorted=False)
         boxes          = keras.backend.gather(boxes, indices)
         classification = keras.backend.gather(classification, indices)
 
@@ -60,16 +60,18 @@ class RoiAlign(keras.layers.Layer):
             ordered_boxes.append(level_boxes)
             ordered_classification.append(level_classification)
 
+            fpn_shape = keras.backend.cast(keras.backend.shape(fpn[i]), dtype=keras.backend.floatx())
+
             # convert to expected format for crop_and_resize
             x1 = level_boxes[:, 0]
             y1 = level_boxes[:, 1]
             x2 = level_boxes[:, 2]
             y2 = level_boxes[:, 3]
             level_boxes = keras.backend.stack([
-                y1 / keras.backend.cast(image_shape[1], dtype=keras.backend.floatx()),
-                x1 / keras.backend.cast(image_shape[2], dtype=keras.backend.floatx()),
-                y2 / keras.backend.cast(image_shape[1], dtype=keras.backend.floatx()),
-                x2 / keras.backend.cast(image_shape[2], dtype=keras.backend.floatx()),
+                (y1 / image_shape[1] * fpn_shape[0]) / (fpn_shape[0] - 1),
+                (x1 / image_shape[2] * fpn_shape[1]) / (fpn_shape[1] - 1),
+                (y2 / image_shape[1] * fpn_shape[0] - 1) / (fpn_shape[0] - 1),
+                (x2 / image_shape[2] * fpn_shape[1] - 1) / (fpn_shape[1] - 1),
             ], axis=1)
 
             # append the rois to the list of rois

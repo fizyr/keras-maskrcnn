@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from keras_retinanet.utils.colors import label_color
 
-def draw_mask(image, box, mask, color=(0, 255, 0), binarize_threshold=0.5):
+def draw_mask(image, box, mask, color=None, binarize_threshold=0.5):
     """ Draws a mask in a given box.
 
     Args
@@ -12,6 +12,12 @@ def draw_mask(image, box, mask, color=(0, 255, 0), binarize_threshold=0.5):
         color              : Color to draw the mask with.
         binarize_threshold : Threshold used for binarizing the mask.
     """
+    if color is None:
+        if len(box) > 4:
+            color = label_color(int(box[4]))
+        else:
+            color = (0, 255, 0)
+
     # resize to fit the box
     mask = cv2.resize(mask, (box[2] - box[0], box[3] - box[1]))
 

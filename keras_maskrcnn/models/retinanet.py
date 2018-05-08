@@ -5,16 +5,6 @@ import keras_retinanet.models.retinanet
 from ..layers.roi import RoiAlign
 from ..layers.upsample import Upsample
 from ..layers.misc import Shape, ConcatenateBoxesMasks
-from .. import losses
-
-custom_objects = keras_retinanet.models.retinanet.custom_objects
-custom_objects.update({
-    'RoiAlign'              : RoiAlign,
-    'Upsample'              : Upsample,
-    'Shape'                 : Shape,
-    'ConcatenateBoxesMasks' : ConcatenateBoxesMasks,
-    '_mask'                 : losses.mask(),
-})
 
 
 def default_mask_model(
