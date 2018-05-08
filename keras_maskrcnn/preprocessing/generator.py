@@ -90,7 +90,7 @@ class Generator(object):
 
             # check if all masks have the same size of the respective image
             for idx in range(len(masks)):
-                assert(image.shape[0:2] == masks[idx].shape[0:2]), 'Found different image and mask size in image {}'.format(group[index])
+                assert(image.shape == masks[idx].shape), 'Found different image and mask size in image {}'.format(group[index])
 
             # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0 | x2 >= image.shape[1] | y2 >= image.shape[0]
             invalid_indices = np.where(
@@ -124,9 +124,9 @@ class Generator(object):
             image     = apply_transform(transform, image, self.transform_parameters)
 
             # randomly transform the masks and expand so to have a fake channel dimension
-            for i in range(len(masks)):
-                masks[i] = apply_transform(transform, masks[i], self.transform_parameters)
-                masks[i] = np.expand_dims(masks[i], axis=2)
+            for m in range(len(masks)):
+                masks[m] = apply_transform(transform, masks[m], self.transform_parameters)
+                masks[m] = np.expand_dims(masks[m], axis=2)
 
             # randomly transform the bounding boxes
             annotations = annotations.copy()
