@@ -135,7 +135,7 @@ class CSVGenerator(Generator):
         for key, value in self.classes.items():
             self.labels[value] = key
 
-        # csv with img_path, x1, y1, x2, y2, class_name
+        # csv with img_path, x1, y1, x2, y2, class_name, mask_path
         try:
             with _open_for_csv(csv_data_file) as file:
                 self.image_data = _read_annotations(csv.reader(file, delimiter=','), self.classes)
@@ -183,7 +183,7 @@ class CSVGenerator(Generator):
             annotations[idx, 3]  = float(annot['y2'])
             annotations[idx, 4]  = self.name_to_label(annot['class'])
             mask = cv2.imread(annot['mask_path'], cv2.IMREAD_GRAYSCALE).astype(float)
-            mask[np.where(mask > 0)] = 1  # convert from 0-255 to binary mask
+            mask = (mask > 0).astype(np.uint8)  # convert from 0-255 to binary mask
             masks.append(mask)
 
         return annotations, masks

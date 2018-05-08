@@ -228,6 +228,7 @@ class Generator(object):
 
         # copy all annotations / masks to the batch
         max_annotations = max(a.shape[0] for a in annotations_group)
+        # masks_batch has shape: (batch size, max_annotations, bbox_x1 + bbox_y1 + bbox_x2 + bbox_y2 + prediction_label + width + height + max_image_dimension)
         masks_batch     = np.zeros((self.batch_size, max_annotations, 5 + 2 + max_shape[0] * max_shape[1]), dtype=keras.backend.floatx())
         for index, (annotations, masks) in enumerate(zip(annotations_group, masks_group)):
             masks_batch[index, :annotations.shape[0], :annotations.shape[1]] = annotations
