@@ -31,6 +31,7 @@ if __name__ == "__main__" and __package__ is None:
     __package__ = "keras_maskrcnn.bin"
 
 # Change these to absolute imports if you copy this script outside the keras_retinanet package.
+from .. import models
 from ..preprocessing.coco import CocoGenerator
 from ..utils.coco_eval import evaluate_coco
 from ..models.resnet import custom_objects
