@@ -53,11 +53,19 @@ def create_generator(args):
 
     if args.dataset_type == 'coco':
         # import here to prevent unnecessary dependency on cocoapi
-        from ..preprocessing.coco import CocoGeneratorMask
+        from ..preprocessing.coco import CocoGenerator
 
-        generator = CocoGeneratorMask(
+        generator = CocoGenerator(
             args.coco_path,
             args.coco_set,
+            transform_generator=transform_generator
+        )
+    elif args.dataset_type == 'csv':
+        from ..preprocessing.csv_generator import CSVGenerator
+
+        generator = CSVGenerator(
+            args.annotations,
+            args.classes,
             transform_generator=transform_generator
         )
     else:
@@ -74,6 +82,10 @@ def parse_args(args):
     coco_parser = subparsers.add_parser('coco')
     coco_parser.add_argument('coco_path',  help='Path to dataset directory (ie. /tmp/COCO).')
     coco_parser.add_argument('--coco-set', help='Name of the set to show (defaults to val2017).', default='val2017')
+
+    csv_parser = subparsers.add_parser('csv')
+    csv_parser.add_argument('annotations', help='Path to a CSV file containing annotations for evaluation.')
+    csv_parser.add_argument('classes',     help='Path to a CSV file containing class label mapping.')
 
     parser.add_argument('-l', '--loop', help='Loop forever, even if the dataset is exhausted.', action='store_true')
     parser.add_argument('--no-resize', help='Disable image resizing.', dest='resize', action='store_false')
