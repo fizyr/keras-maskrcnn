@@ -138,16 +138,16 @@ def create_generators(args):
 
     if args.dataset_type == 'coco':
         # import here to prevent unnecessary dependency on cocoapi
-        from ..preprocessing.coco import CocoGeneratorMask
+        from ..preprocessing.coco import CocoGenerator
 
-        train_generator = CocoGeneratorMask(
+        train_generator = CocoGenerator(
             args.coco_path,
             'train2017',
             transform_generator=transform_generator,
             batch_size=args.batch_size,
         )
 
-        validation_generator = CocoGeneratorMask(
+        validation_generator = CocoGenerator(
             args.coco_path,
             'val2017',
             batch_size=args.batch_size,
@@ -165,22 +165,24 @@ def create_generators(args):
     #        'test',
     #        batch_size=args.batch_size
     #    )
-    #elif args.dataset_type == 'csv':
-    #    train_generator = CSVGenerator(
-    #        args.annotations,
-    #        args.classes,
-    #        transform_generator=transform_generator,
-    #        batch_size=args.batch_size
-    #    )
+    elif args.dataset_type == 'csv':
+        from ..preprocessing.csv_generator import CSVGenerator
 
-    #    if args.val_annotations:
-    #        validation_generator = CSVGenerator(
-    #            args.val_annotations,
-    #            args.classes,
-    #            batch_size=args.batch_size
-    #        )
-    #    else:
-    #        validation_generator = None
+        train_generator = CSVGenerator(
+            args.annotations,
+            args.classes,
+            transform_generator=transform_generator,
+            batch_size=args.batch_size
+        )
+
+        if args.val_annotations:
+            validation_generator = CSVGenerator(
+                args.val_annotations,
+                args.classes,
+                batch_size=args.batch_size
+            )
+        else:
+            validation_generator = None
     #elif args.dataset_type == 'oid':
     #    train_generator = OpenImagesGenerator(
     #        args.main_dir,
@@ -245,10 +247,10 @@ def parse_args(args):
     #oid_parser.add_argument('--annotation-cache-dir', help='Path to store annotation cache.', default='.')
     #oid_parser.add_argument('--fixed-labels', help='Use the exact specified labels.', default=False)
 
-    #csv_parser = subparsers.add_parser('csv')
-    #csv_parser.add_argument('annotations', help='Path to CSV file containing annotations for training.')
-    #csv_parser.add_argument('classes', help='Path to a CSV file containing class label mapping.')
-    #csv_parser.add_argument('--val-annotations', help='Path to CSV file containing annotations for validation (optional).')
+    csv_parser = subparsers.add_parser('csv')
+    csv_parser.add_argument('annotations', help='Path to CSV file containing annotations for training.')
+    csv_parser.add_argument('classes', help='Path to a CSV file containing class label mapping.')
+    csv_parser.add_argument('--val-annotations', help='Path to CSV file containing annotations for validation (optional).')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--snapshot',          help='Resume training from a snapshot.')
