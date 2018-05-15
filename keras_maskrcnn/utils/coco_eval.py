@@ -69,7 +69,7 @@ def evaluate_coco(generator, model, threshold=0.05):
                 'image_id'    : generator.image_ids[index],
                 'category_id' : generator.label_to_coco_label(label),
                 'score'       : float(score),
-                'bbox'        : b.tolist(),
+                'bbox'        : box.tolist(),
                 'segmentation': segmentation
             }
 
