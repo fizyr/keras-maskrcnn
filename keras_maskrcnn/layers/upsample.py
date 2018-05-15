@@ -27,7 +27,7 @@ class Upsample(keras.layers.Layer):
         super(Upsample, self).__init__(*args, **kwargs)
 
     def call(self, inputs, **kwargs):
-        return keras_retinanet.backend.resize_images(inputs, (self.target_size[0], self.target_size[1]))
+        return keras_retinanet.backend.resize_images(inputs, (self.target_size[0], self.target_size[1]), method='nearest')
 
     def compute_output_shape(self, input_shape):
         return (input_shape[0],) + tuple(self.target_size) + (input_shape[-1],)
