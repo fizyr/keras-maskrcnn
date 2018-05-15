@@ -57,6 +57,9 @@ For training on [MS COCO](http://cocodataset.org/#home), run:
 ```shell
 # Running directly from the repository:
 ./keras_maskrcnn/bin/train.py coco /path/to/MS/COCO
+
+# Using the installed script:
+maskrcn-train coco /path/to/MS/COCO
 ```
 
 The pretrained MS COCO model can be downloaded [here](https://github.com/fizyr/keras-maskrcnn/releases). Results using the `cocoapi` are shown below (note: the closest resembling architecture in the MaskRCNN paper achieves an mAP of 0.336).
@@ -82,6 +85,9 @@ To train using your CSV, run:
 ```shell
 # Running directly from the repository:
 ./keras_maskrcnn/bin/train.py csv /path/to/csv/file/containing/annotations /path/to/csv/file/containing/classes
+
+# Using the installed script:
+maskrcnn-train csv /path/to/csv/file/containing/annotations /path/to/csv/file/containing/classes
 ```
 
 ## CSV datasets
