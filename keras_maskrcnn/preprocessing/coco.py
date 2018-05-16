@@ -23,6 +23,7 @@ from pycocotools.coco import COCO
 from .generator import Generator
 from keras_retinanet.utils.image import read_image_bgr
 
+
 class CocoGenerator(Generator):
     def __init__(
             self,
@@ -136,4 +137,3 @@ class CocoGenerator(Generator):
         annotations[:, 3] = annotations[:, 1] + annotations[:, 3]
 
         return annotations, masks
-

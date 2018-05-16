@@ -39,7 +39,7 @@ if __name__ == "__main__" and __package__ is None:
 # Change these to absolute imports if you copy this script outside the keras_retinanet package.
 from .. import losses
 from .. import models
-#from ..callbacks.eval import Evaluate
+# from ..callbacks.eval import Evaluate
 
 
 def get_session():
@@ -113,8 +113,8 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
 
             # use prediction model for evaluation
             evaluation = CocoEval(validation_generator)
-        #else:
-        #    evaluation = Evaluate(validation_generator, tensorboard=tensorboard_callback)
+        # else:
+        #     evaluation = Evaluate(validation_generator, tensorboard=tensorboard_callback)
         evaluation = RedirectModel(evaluation, prediction_model)
         callbacks.append(evaluation)
 
@@ -152,19 +152,6 @@ def create_generators(args):
             'val2017',
             batch_size=args.batch_size,
         )
-    #elif args.dataset_type == 'pascal':
-    #    train_generator = PascalVocGenerator(
-    #        args.pascal_path,
-    #        'trainval',
-    #        transform_generator=transform_generator,
-    #        batch_size=args.batch_size
-    #    )
-
-    #    validation_generator = PascalVocGenerator(
-    #        args.pascal_path,
-    #        'test',
-    #        batch_size=args.batch_size
-    #    )
     elif args.dataset_type == 'csv':
         from ..preprocessing.csv_generator import CSVGenerator
 
@@ -183,30 +170,6 @@ def create_generators(args):
             )
         else:
             validation_generator = None
-    #elif args.dataset_type == 'oid':
-    #    train_generator = OpenImagesGenerator(
-    #        args.main_dir,
-    #        subset='train',
-    #        version=args.version,
-    #        labels_filter=args.labels_filter,
-    #        annotation_cache_dir=args.annotation_cache_dir,
-    #        fixed_labels=args.fixed_labels,
-    #        transform_generator=transform_generator,
-    #        batch_size=args.batch_size
-    #    )
-
-    #    if args.val_annotations:
-    #        validation_generator = OpenImagesGenerator(
-    #            args.main_dir,
-    #            subset='validation',
-    #            version=args.version,
-    #            labels_filter=args.labels_filter,
-    #            annotation_cache_dir=args.annotation_cache_dir,
-    #            fixed_labels=args.fixed_labels,
-    #            batch_size=args.batch_size
-    #        )
-    #    else:
-    #        validation_generator = None
     else:
         raise ValueError('Invalid data type received: {}'.format(args.dataset_type))
 
@@ -233,19 +196,6 @@ def parse_args(args):
 
     coco_parser = subparsers.add_parser('coco')
     coco_parser.add_argument('coco_path', help='Path to dataset directory (ie. /tmp/COCO).')
-
-    #pascal_parser = subparsers.add_parser('pascal')
-    #pascal_parser.add_argument('pascal_path', help='Path to dataset directory (ie. /tmp/VOCdevkit).')
-
-    #def csv_list(string):
-        #return string.split(',')
-
-    #oid_parser = subparsers.add_parser('oid')
-    #oid_parser.add_argument('main_dir', help='Path to dataset directory.')
-    #oid_parser.add_argument('--version',  help='The current dataset version is V3.', default='2017_11')
-    #oid_parser.add_argument('--labels-filter',  help='A list of labels to filter.', type=csv_list, default=None)
-    #oid_parser.add_argument('--annotation-cache-dir', help='Path to store annotation cache.', default='.')
-    #oid_parser.add_argument('--fixed-labels', help='Use the exact specified labels.', default=False)
 
     csv_parser = subparsers.add_parser('csv')
     csv_parser.add_argument('annotations', help='Path to CSV file containing annotations for training.')

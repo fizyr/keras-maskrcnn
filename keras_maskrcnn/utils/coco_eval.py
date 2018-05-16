@@ -25,6 +25,7 @@ import json
 import os
 import cv2
 
+
 def evaluate_coco(generator, model, threshold=0.05):
     # start collecting results
     results = []
@@ -61,7 +62,7 @@ def evaluate_coco(generator, model, threshold=0.05):
             mask = (mask > 0.5).astype(np.uint8)  # binarize for encoding as RLE
 
             segmentation = np.zeros((image_shape[0], image_shape[1]), dtype=np.uint8)
-            segmentation[b[1]:b[1]+b[3], b[0]:b[0]+b[2]] = mask
+            segmentation[b[1]:b[1] + b[3], b[0]:b[0] + b[2]] = mask
             segmentation = mask_utils.encode(np.asfortranarray(segmentation))
 
             # append boxes for each positively labeled class

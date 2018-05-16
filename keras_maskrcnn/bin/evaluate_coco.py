@@ -36,6 +36,7 @@ from ..preprocessing.coco import CocoGenerator
 from ..utils.coco_eval import evaluate_coco
 from keras_retinanet.utils.keras_version import check_keras_version
 
+
 def get_session():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True

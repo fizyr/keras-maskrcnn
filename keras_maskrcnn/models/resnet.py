@@ -22,6 +22,7 @@ import keras_resnet.models
 import keras_retinanet.models.resnet
 from ..models import retinanet, Backbone
 
+
 class ResNetBackbone(Backbone, keras_retinanet.models.resnet.ResNetBackbone):
     def maskrcnn(self, *args, **kwargs):
         """ Returns a maskrcnn model using the correct backbone.
@@ -62,4 +63,3 @@ def resnet101_maskrcnn(num_classes, inputs=None, **kwargs):
 
 def resnet152_maskrcnn(num_classes, inputs=None, **kwargs):
     return resnet_maskrcnn(num_classes=num_classes, backbone='resnet152', inputs=inputs, **kwargs)
-

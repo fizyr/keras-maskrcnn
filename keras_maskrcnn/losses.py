@@ -2,6 +2,7 @@ import keras.backend
 import keras_retinanet.backend
 from . import backend
 
+
 def mask(iou_threshold=0.5, mask_size=(28, 28)):
     def _mask(y_true, y_pred):
         # split up the different predicted blobs

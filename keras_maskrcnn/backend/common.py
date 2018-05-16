@@ -20,6 +20,7 @@ import keras.backend
 def log2(x):
     return keras.backend.log(x) / keras.backend.log(2.0)
 
+
 def overlap(a, b):
     """ Computes the IoU overlap of boxes in a and b.
 

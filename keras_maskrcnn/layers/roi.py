@@ -6,7 +6,7 @@ from .. import backend
 
 
 class RoiAlign(keras.layers.Layer):
-    def __init__(self, top_k=500, crop_size=(14, 14), **kwargs):
+    def __init__(self, top_k=1000, crop_size=(14, 14), **kwargs):
         self.crop_size = crop_size
         self.top_k = top_k
 

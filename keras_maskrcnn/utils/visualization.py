@@ -37,9 +37,6 @@ def draw_mask(image, box, mask, color=None, binarize_threshold=0.5):
     mask = (np.stack([mask] * 3, axis=2) * color).astype(np.uint8)
     border = (np.stack([border] * 3, axis=2) * (255, 255, 255)).astype(np.uint8)
 
-    # merge the two to get a blended effect
-    #mask = cv2.addWeighted(mask, 0.2, eroded_mask + border, 0.8, 0.0)
-
     # draw the mask
     indices = np.where(mask != [0, 0, 0])
     image[indices[0], indices[1], :] = 0.5 * image[indices[0], indices[1], :] + 0.5 * mask[indices[0], indices[1], :]

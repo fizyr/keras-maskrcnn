@@ -1,5 +1,6 @@
 import keras_retinanet.models
 
+
 class Backbone(keras_retinanet.models.Backbone):
     """ This class stores additional information on backbones.
     """
@@ -23,6 +24,7 @@ class Backbone(keras_retinanet.models.Backbone):
         """ Returns a maskrcnn model using the correct backbone.
         """
         raise NotImplementedError('maskrcnn method not implemented.')
+
 
 def backbone(backbone_name):
     """ Returns a backbone object for the given backbone_name.
