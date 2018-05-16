@@ -29,7 +29,7 @@ def default_mask_model(
     for i in range(4):
         outputs = keras.layers.TimeDistributed(keras.layers.Conv2D(
             filters=mask_feature_size,
-            **options,
+            **options
         ), name='roi_mask_{}'.format(i))(outputs)
 
     # perform upsampling + conv instead of deconv as in the paper
@@ -39,13 +39,13 @@ def default_mask_model(
         name='roi_mask_upsample')(outputs)
     outputs = keras.layers.TimeDistributed(keras.layers.Conv2D(
         filters=mask_feature_size,
-        **options,
+        **options
     ), name='roi_mask_features')(outputs)
 
     outputs = keras.layers.TimeDistributed(keras.layers.Conv2D(
         filters=num_classes,
         kernel_size=1,
-        activation='sigmoid',
+        activation='sigmoid'
     ), name='roi_mask')(outputs)
 
     return keras.models.Model(inputs=inputs, outputs=outputs, name=name)
