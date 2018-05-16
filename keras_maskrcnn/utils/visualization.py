@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from keras_retinanet.utils.colors import label_color
 
+
 def draw_mask(image, box, mask, color=None, binarize_threshold=0.5):
     """ Draws a mask in a given box.
 
