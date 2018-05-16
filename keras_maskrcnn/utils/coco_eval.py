@@ -33,11 +33,11 @@ def evaluate_coco(generator, model, threshold=0.05):
     debug_counter = 0
 
     for index in range(generator.size()):
-        
+
         debug_counter = debug_counter + 1
-        if debug_counter ==100:
-            break
-        
+        #if debug_counter ==100:
+        #    break
+
         image = generator.load_image(index)
         image_shape = image.shape
         image = generator.preprocess_image(image)
