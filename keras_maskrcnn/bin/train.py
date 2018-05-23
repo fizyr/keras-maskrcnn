@@ -39,7 +39,7 @@ if __name__ == "__main__" and __package__ is None:
 # Change these to absolute imports if you copy this script outside the keras_retinanet package.
 from .. import losses
 from .. import models
-# from ..callbacks.eval import Evaluate
+from ..callbacks.eval import Evaluate
 
 
 def get_session():
@@ -113,8 +113,8 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
 
             # use prediction model for evaluation
             evaluation = CocoEval(validation_generator)
-        # else:
-        #     evaluation = Evaluate(validation_generator, tensorboard=tensorboard_callback)
+        else:
+            evaluation = Evaluate(validation_generator, tensorboard=tensorboard_callback)
         evaluation = RedirectModel(evaluation, prediction_model)
         callbacks.append(evaluation)
 
