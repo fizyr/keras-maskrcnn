@@ -178,13 +178,11 @@ def evaluate(
     all_annotations, all_gt_masks = _get_annotations(generator)
     average_precisions = {}
 
-    import pickle
-    #all_detections = pickle.load(open('all_detections.pkl', 'rb'))
-    #all_annotations = pickle.load(open('all_annotations.pkl', 'rb'))
-    pickle.dump(all_detections, open('all_detections.pkl', 'wb'))
-    pickle.dump(all_masks, open('all_masks.pkl', 'wb'))
-    pickle.dump(all_annotations, open('all_annotations.pkl', 'wb'))
-    pickle.dump(all_gt_masks, open('all_gt_masks.pkl', 'wb'))
+    # import pickle
+    # pickle.dump(all_detections, open('all_detections.pkl', 'wb'))
+    # pickle.dump(all_masks, open('all_masks.pkl', 'wb'))
+    # pickle.dump(all_annotations, open('all_annotations.pkl', 'wb'))
+    # pickle.dump(all_gt_masks, open('all_gt_masks.pkl', 'wb'))
 
     # process detections and annotations
     for label in range(generator.num_classes()):
