@@ -3,7 +3,7 @@ import numpy as np
 from keras_retinanet.utils.colors import label_color
 
 
-def draw_mask(image, box, mask, color=None, binarize_threshold=0.5):
+def draw_mask(image, box, mask, label=None, color=None, binarize_threshold=0.5):
     """ Draws a mask in a given box.
 
     Args
@@ -13,11 +13,10 @@ def draw_mask(image, box, mask, color=None, binarize_threshold=0.5):
         color              : Color to draw the mask with. If the box has 5 values, the last value is assumed to be the label and used to construct a default color.
         binarize_threshold : Threshold used for binarizing the mask.
     """
+    if label is not None:
+        color = label_color(label)
     if color is None:
-        if len(box) > 4:
-            color = label_color(int(box[4]))
-        else:
-            color = (0, 255, 0)
+        color = (0, 255, 0)
 
     # resize to fit the box
     mask = cv2.resize(mask, (box[2] - box[0], box[3] - box[1]))
@@ -46,15 +45,19 @@ def draw_mask(image, box, mask, color=None, binarize_threshold=0.5):
     image[indices[0], indices[1], :] = 0.2 * image[indices[0], indices[1], :] + 0.8 * border[indices[0], indices[1], :]
 
 
-def draw_masks(image, boxes, masks, color=None, binarize_threshold=0.5):
+def draw_masks(image, boxes, masks, labels=None, color=None, binarize_threshold=0.5):
     """ Draws a list of masks given a list of boxes.
 
     Args
         image              : Three dimensional image to draw on.
-        box                : Matrix of shape (N, >=4) (at least 4 values: (x1, y1, x2, y2)) representing boxes in the image.
-        mask               : Matrix of shape (N, H, W) of N masks of shape (H, W) which will be reshaped to the size of the corresponding box, binarized and drawn over the image.
-        color              : Single color or list of color to draw the masks with.
+        boxes              : Matrix of shape (N, >=4) (at least 4 values: (x1, y1, x2, y2)) representing boxes in the image.
+        masks              : Matrix of shape (N, H, W) of N masks of shape (H, W) which will be reshaped to the size of the corresponding box, binarized and drawn over the image.
+        labels             : Optional list of labels, used to color the masks with. If provided, color is ignored.
+        color              : Color or to draw the masks with.
         binarize_threshold : Threshold used for binarizing the masks.
     """
-    for box, mask in zip(boxes, masks):
-        draw_mask(image, box, mask, color=color, binarize_threshold=binarize_threshold)
+    if labels is None:
+        labels = [None for _ in range(boxes.shape[0])]
+
+    for box, mask, label in zip(boxes, masks, labels):
+        draw_mask(image, box, mask, label=label, color=color, binarize_threshold=binarize_threshold)
