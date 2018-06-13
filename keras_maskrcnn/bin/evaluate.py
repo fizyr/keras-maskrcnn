@@ -139,7 +139,7 @@ def main(args=None):
         # print evaluation
         present_classes = 0
         precision = 0
-        for label, (average_precision, num_annotations ) in average_precisions.items():
+        for label, (average_precision, num_annotations) in average_precisions.items():
             print('{:.0f} instances of class'.format(num_annotations),
                   generator.label_to_name(label), 'with average precision: {:.4f}'.format(average_precision))
             if num_annotations > 0:
