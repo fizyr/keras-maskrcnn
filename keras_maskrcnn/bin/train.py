@@ -54,10 +54,16 @@ def model_with_weights(model, weights, skip_mismatch):
     return model
 
 
-def create_models(backbone_retinanet, num_classes, weights, freeze_backbone=False):
+def create_models(backbone_retinanet, num_classes, weights, freeze_backbone=False, class_specific_filter=True):
     modifier = freeze_model if freeze_backbone else None
 
-    model            = model_with_weights(backbone_retinanet(num_classes, nms=True, modifier=modifier), weights=weights, skip_mismatch=True)
+    model            = model_with_weights(
+        backbone_retinanet(
+            num_classes,
+            nms=True,
+            class_specific_filter=class_specific_filter,
+            modifier=modifier
+        ), weights=weights, skip_mismatch=True)
     training_model   = model
     prediction_model = model
 
@@ -218,6 +224,7 @@ def parse_args(args):
     parser.add_argument('--no-snapshots',    help='Disable saving snapshots.', dest='snapshots', action='store_false')
     parser.add_argument('--no-evaluation',   help='Disable per epoch evaluation.', dest='evaluation', action='store_false')
     parser.add_argument('--freeze-backbone', help='Freeze training of backbone layers.', action='store_true')
+    parser.add_argument('--no-class-specific-filter', help='Disables class specific filtering.', dest='class_specific_filter', action='store_false')
 
     return check_args(parser.parse_args(args))
 
@@ -259,7 +266,8 @@ def main(args=None):
             backbone_retinanet=backbone.maskrcnn,
             num_classes=train_generator.num_classes(),
             weights=weights,
-            freeze_backbone=args.freeze_backbone
+            freeze_backbone=args.freeze_backbone,
+            class_specific_filter=args.class_specific_filter
         )
 
     # print model summary

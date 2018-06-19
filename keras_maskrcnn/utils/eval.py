@@ -16,7 +16,7 @@ limitations under the License.
 
 from __future__ import print_function
 
-from keras_retinanet.utils.visualization import draw_detections, draw_annotations
+from keras_retinanet.utils.visualization import draw_detections
 
 from .overlap import compute_overlap
 from .visualization import draw_masks
@@ -107,7 +107,7 @@ def _get_detections(generator, model, score_threshold=0.05, max_detections=100, 
 
         if save_path is not None:
             # draw_annotations(raw_image, generator.load_annotations(i)[0], label_to_name=generator.label_to_name)
-            draw_detections(raw_image, image_boxes, image_scores, image_labels, label_to_name=generator.label_to_name)
+            draw_detections(raw_image, image_boxes, image_scores, image_labels, score_threshold=score_threshold, label_to_name=generator.label_to_name)
             draw_masks(raw_image, image_boxes.astype(int), image_masks, labels=image_labels)
 
             cv2.imwrite(os.path.join(save_path, '{}.png'.format(i)), raw_image)

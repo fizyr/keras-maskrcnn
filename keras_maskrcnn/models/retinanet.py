@@ -62,6 +62,7 @@ def retinanet_mask(
     num_classes,
     anchor_parameters=keras_retinanet.models.retinanet.AnchorParameters.default,
     nms=True,
+    class_specific_filter=True,
     name='retinanet-mask',
     roi_submodels=None,
     **kwargs
@@ -115,7 +116,7 @@ def retinanet_mask(
     boxes_masks = ConcatenateBoxesMasks(name='boxes_masks')([top_boxes, masks])
 
     # perform detection filtering
-    detections = keras_retinanet.layers.FilterDetections(nms=nms, name='filtered_detections')([top_boxes, top_classification] + other + [masks])
+    detections = keras_retinanet.layers.FilterDetections(nms=nms, class_specific_filter=class_specific_filter, name='filtered_detections')([top_boxes, top_classification] + other + [masks])
 
     # reconstruct the new output
     outputs = [regression, classification] + other + [boxes_masks] + detections
