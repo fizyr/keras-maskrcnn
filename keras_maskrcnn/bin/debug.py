@@ -117,8 +117,9 @@ def run(generator, args):
 
         # draw anchors on the image
         if args.anchors:
-            labels, _, anchors = generator.compute_anchor_targets(image.shape, annotations, generator.num_classes())
-            draw_boxes(image, anchors[np.max(labels, axis=1) == 1], (255, 255, 0), thickness=1)
+            anchors = generator.generate_anchors(image.shape)
+            labels, _, _ = generator.compute_anchor_targets(anchors, [image], [annotations], generator.num_classes())
+            draw_boxes(image, anchors[np.max(labels[0], axis=1) == 1], (255, 255, 0), thickness=1)
 
         # draw annotations on the image
         if args.annotations:
@@ -127,8 +128,9 @@ def run(generator, args):
 
             # draw regressed anchors in green to override most red annotations
             # result is that annotations without anchors are red, with anchors are green
-            labels, boxes, _ = generator.compute_anchor_targets(image.shape, annotations, generator.num_classes())
-            draw_boxes(image, boxes[np.max(labels, axis=1) == 1], (0, 255, 0))
+            anchors = generator.generate_anchors(image.shape)
+            labels, _, boxes = generator.compute_anchor_targets(anchors, [image], [annotations], generator.num_classes())
+            draw_boxes(image, boxes[0, np.max(labels[0], axis=1) == 1], (0, 255, 0))
 
         # Draw masks over the image with random colours
         if args.masks:
