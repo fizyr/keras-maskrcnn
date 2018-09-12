@@ -60,7 +60,7 @@ def default_roi_submodels(num_classes):
 def retinanet_mask(
     inputs,
     num_classes,
-    anchor_parameters=keras_retinanet.models.retinanet.AnchorParameters.default,
+    anchor_params=None,
     nms=True,
     class_specific_filter=True,
     name='retinanet-mask',
@@ -72,10 +72,11 @@ def retinanet_mask(
     This model uses the retinanet bbox model and appends a few layers to compute masks.
 
     # Arguments
-        inputs      : List of keras.layers.Input. The first input is the image, the second input the blob of masks.
-        num_classes : Number of classes to classify.
-        name        : Name of the model.
-        *kwargs     : Additional kwargs to pass to the retinanet bbox model.
+        inputs        : List of keras.layers.Input. The first input is the image, the second input the blob of masks.
+        num_classes   : Number of classes to classify.
+        anchor_params : Struct containing anchor parameters. If None, default values are used.
+        name          : Name of the model.
+        *kwargs       : Additional kwargs to pass to the retinanet bbox model.
     # Returns
         Model with inputs as input and as output the output of each submodel for each pyramid level and the detections.
 
@@ -86,6 +87,9 @@ def retinanet_mask(
         ]
         ```
     """
+    if anchor_params is None:
+        anchor_params = keras_retinanet.utils.anchors.AnchorParameters.default
+
     if roi_submodels is None:
         roi_submodels = default_roi_submodels(num_classes)
 
@@ -101,7 +105,7 @@ def retinanet_mask(
     features       = [retinanet_model.get_layer(name).output for name in ['P3', 'P4', 'P5', 'P6', 'P7']]
 
     # build boxes
-    anchors = keras_retinanet.models.retinanet.__build_anchors(anchor_parameters, features)
+    anchors = keras_retinanet.models.retinanet.__build_anchors(anchor_params, features)
     boxes = keras_retinanet.layers.RegressBoxes(name='boxes')([anchors, regression])
     boxes = keras_retinanet.layers.ClipBoxes(name='clipped_boxes')([image, boxes])
 

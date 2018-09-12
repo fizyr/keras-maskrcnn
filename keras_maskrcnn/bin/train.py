@@ -26,6 +26,7 @@ import tensorflow as tf
 
 import keras_retinanet.losses
 from keras_retinanet.callbacks import RedirectModel
+from keras_retinanet.utils.config import read_config_file, parse_anchor_parameters
 from keras_retinanet.utils.transform import random_transform_generator
 from keras_retinanet.utils.keras_version import check_keras_version
 from keras_retinanet.utils.model import freeze as freeze_model
@@ -54,7 +55,7 @@ def model_with_weights(model, weights, skip_mismatch):
     return model
 
 
-def create_models(backbone_retinanet, num_classes, weights, freeze_backbone=False, class_specific_filter=True):
+def create_models(backbone_retinanet, num_classes, weights, freeze_backbone=False, class_specific_filter=True, anchor_params=None):
     modifier = freeze_model if freeze_backbone else None
 
     model            = model_with_weights(
@@ -62,7 +63,8 @@ def create_models(backbone_retinanet, num_classes, weights, freeze_backbone=Fals
             num_classes,
             nms=True,
             class_specific_filter=class_specific_filter,
-            modifier=modifier
+            modifier=modifier,
+            anchor_params=anchor_params
         ), weights=weights, skip_mismatch=True)
     training_model   = model
     prediction_model = model
@@ -151,12 +153,14 @@ def create_generators(args):
             'train2017',
             transform_generator=transform_generator,
             batch_size=args.batch_size,
+            config=args.config
         )
 
         validation_generator = CocoGenerator(
             args.coco_path,
             'val2017',
             batch_size=args.batch_size,
+            config=args.config
         )
     elif args.dataset_type == 'csv':
         from ..preprocessing.csv_generator import CSVGenerator
@@ -165,14 +169,16 @@ def create_generators(args):
             args.annotations,
             args.classes,
             transform_generator=transform_generator,
-            batch_size=args.batch_size
+            batch_size=args.batch_size,
+            config=args.config
         )
 
         if args.val_annotations:
             validation_generator = CSVGenerator(
                 args.val_annotations,
                 args.classes,
-                batch_size=args.batch_size
+                batch_size=args.batch_size,
+                config=args.config
             )
         else:
             validation_generator = None
@@ -214,18 +220,19 @@ def parse_args(args):
     group.add_argument('--weights',           help='Initialize the model with weights from a file.')
     group.add_argument('--no-weights',        help='Don\'t initialize the model with any weights.', dest='imagenet_weights', action='store_const', const=False)
 
-    parser.add_argument('--backbone',        help='Backbone model used by retinanet.', default='resnet50', type=str)
-    parser.add_argument('--batch-size',      help='Size of the batches.', default=1, type=int)
-    parser.add_argument('--gpu',             help='Id of the GPU to use (as reported by nvidia-smi).')
-    parser.add_argument('--epochs',          help='Number of epochs to train.', type=int, default=50)
-    parser.add_argument('--steps',           help='Number of steps per epoch.', type=int, default=10000)
-    parser.add_argument('--snapshot-path',   help='Path to store snapshots of models during training (defaults to \'./snapshots\')', default='./snapshots')
-    parser.add_argument('--tensorboard-dir', help='Log directory for Tensorboard output', default='./logs')
-    parser.add_argument('--no-snapshots',    help='Disable saving snapshots.', dest='snapshots', action='store_false')
-    parser.add_argument('--no-evaluation',   help='Disable per epoch evaluation.', dest='evaluation', action='store_false')
-    parser.add_argument('--freeze-backbone', help='Freeze training of backbone layers.', action='store_true')
+    parser.add_argument('--backbone',         help='Backbone model used by retinanet.', default='resnet50', type=str)
+    parser.add_argument('--batch-size',       help='Size of the batches.', default=1, type=int)
+    parser.add_argument('--gpu',              help='Id of the GPU to use (as reported by nvidia-smi).')
+    parser.add_argument('--epochs',           help='Number of epochs to train.', type=int, default=50)
+    parser.add_argument('--steps',            help='Number of steps per epoch.', type=int, default=10000)
+    parser.add_argument('--snapshot-path',    help='Path to store snapshots of models during training (defaults to \'./snapshots\')', default='./snapshots')
+    parser.add_argument('--tensorboard-dir',  help='Log directory for Tensorboard output', default='./logs')
+    parser.add_argument('--no-snapshots',     help='Disable saving snapshots.', dest='snapshots', action='store_false')
+    parser.add_argument('--no-evaluation',    help='Disable per epoch evaluation.', dest='evaluation', action='store_false')
+    parser.add_argument('--freeze-backbone',  help='Freeze training of backbone layers.', action='store_true')
     parser.add_argument('--no-class-specific-filter', help='Disables class specific filtering.', dest='class_specific_filter', action='store_false')
-    parser.add_argument('--weighted-average',   help='Compute the mAP using the weighted average of precisions among classes.', action='store_true')
+    parser.add_argument('--config',           help='Path to a configuration parameters .ini file.', default=None)
+    parser.add_argument('--weighted-average', help='Compute the mAP using the weighted average of precisions among classes.', action='store_true')
 
     return check_args(parser.parse_args(args))
 
@@ -247,6 +254,10 @@ def main(args=None):
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     keras.backend.tensorflow_backend.set_session(get_session())
 
+    # optionally load config parameters
+    if args.config:
+        args.config = read_parameters_file(args.config)
+
     # create the generators
     train_generator, validation_generator = create_generators(args)
 
@@ -262,13 +273,18 @@ def main(args=None):
         if weights is None and args.imagenet_weights:
             weights = backbone.download_imagenet()
 
+        anchor_params = None
+        if args.config and 'anchor_parameters' in args.config:
+            anchor_params = parse_anchor_parameters(args.config)
+
         print('Creating model, this may take a second...')
         model, training_model, prediction_model = create_models(
             backbone_retinanet=backbone.maskrcnn,
             num_classes=train_generator.num_classes(),
             weights=weights,
             freeze_backbone=args.freeze_backbone,
-            class_specific_filter=args.class_specific_filter
+            class_specific_filter=args.class_specific_filter,
+            anchor_params=anchor_params
         )
 
     # print model summary

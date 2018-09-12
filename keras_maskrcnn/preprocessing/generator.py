@@ -27,6 +27,7 @@ from keras_retinanet.utils.anchors import (
     anchors_for_shape,
     guess_shapes
 )
+from keras_retinanet.utils.config import parse_anchor_parameters
 from keras_retinanet.utils.image import (
     TransformParameters,
     adjust_transform_for_image,
@@ -49,6 +50,7 @@ class Generator(object):
         transform_parameters=None,
         compute_shapes=guess_shapes,
         compute_anchor_targets=anchor_targets_bbox,
+        config=None
     ):
         self.transform_generator    = transform_generator
         self.batch_size             = int(batch_size)
@@ -59,6 +61,7 @@ class Generator(object):
         self.transform_parameters   = transform_parameters or TransformParameters()
         self.compute_shapes         = compute_shapes
         self.compute_anchor_targets = compute_anchor_targets
+        self.config                 = config
 
         self.group_index = 0
         self.lock        = threading.Lock()
@@ -203,7 +206,10 @@ class Generator(object):
         return image_batch
 
     def generate_anchors(self, image_shape):
-        return anchors_for_shape(image_shape, shapes_callback=self.compute_shapes)
+        anchor_params = None
+        if self.config and 'anchor_parameters' in self.config:
+            anchor_params = parse_anchor_parameters(self.config)
+        return anchors_for_shape(image_shape, anchor_params=anchor_params, shapes_callback=self.compute_shapes)
 
     def compute_targets(self, image_group, annotations_group, masks_group):
         """ Compute target outputs for the network using images and their annotations.
