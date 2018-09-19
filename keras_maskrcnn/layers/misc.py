@@ -23,4 +23,4 @@ class ConcatenateBoxesMasks(keras.layers.Layer):
 
     def compute_output_shape(self, input_shape):
         detections_shape, masks_shape = input_shape
-        return masks_shape[:2] + (masks_shape[2] * masks_shape[3],)
+        return masks_shape[:2] + (masks_shape[2] * masks_shape[3] + 4,)
