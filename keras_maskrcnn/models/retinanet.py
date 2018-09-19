@@ -60,6 +60,7 @@ def default_roi_submodels(num_classes):
 def retinanet_mask(
     inputs,
     num_classes,
+    retinanet_model=None,
     anchor_parameters=keras_retinanet.models.retinanet.AnchorParameters.default,
     nms=True,
     class_specific_filter=True,
@@ -72,10 +73,11 @@ def retinanet_mask(
     This model uses the retinanet bbox model and appends a few layers to compute masks.
 
     # Arguments
-        inputs      : List of keras.layers.Input. The first input is the image, the second input the blob of masks.
-        num_classes : Number of classes to classify.
-        name        : Name of the model.
-        *kwargs     : Additional kwargs to pass to the retinanet bbox model.
+        inputs          : List of keras.layers.Input. The first input is the image, the second input the blob of masks.
+        num_classes     : Number of classes to classify.
+        retinanet_model : keras_retinanet.models.retinanet model, returning regression and classification values.
+        name            : Name of the model.
+        *kwargs         : Additional kwargs to pass to the retinanet bbox model.
     # Returns
         Model with inputs as input and as output the output of each submodel for each pyramid level and the detections.
 
@@ -92,7 +94,8 @@ def retinanet_mask(
     image = inputs
     image_shape = Shape()(image)
 
-    retinanet_model = keras_retinanet.models.retinanet.retinanet(inputs=image, num_classes=num_classes, **kwargs)
+    if retinanet_model is None:
+        retinanet_model = keras_retinanet.models.retinanet.retinanet(inputs=image, num_classes=num_classes, **kwargs)
 
     # parse outputs
     regression     = retinanet_model.outputs[0]
