@@ -116,7 +116,7 @@ def retinanet_mask(
     masks = roi_submodels[0][1](rois)
 
     # concatenate boxes and masks together
-    boxes_masks = ConcatenateBoxesMasks(name='boxes_masks')([top_boxes, masks])
+    boxes_masks = ConcatenateBoxesMasks(name=roi_submodels[0][0])([top_boxes, masks])
 
     # perform detection filtering
     detections = keras_retinanet.layers.FilterDetections(nms=nms, class_specific_filter=class_specific_filter, name='filtered_detections')([top_boxes, top_classification] + other + [masks])
