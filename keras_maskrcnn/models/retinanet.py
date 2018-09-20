@@ -53,7 +53,7 @@ def default_mask_model(
 
 def default_roi_submodels(num_classes):
     return [
-        ('mask', default_mask_model(num_classes)),
+        ('masks', default_mask_model(num_classes)),
     ]
 
 
