@@ -17,7 +17,7 @@ class Backbone(keras_retinanet.models.Backbone):
             'Upsample'              : Upsample,
             'Shape'                 : Shape,
             'ConcatenateBoxes'      : ConcatenateBoxes,
-            'ConcatenateBoxesMasks' : ConcatenateBoxes, # legacy
+            'ConcatenateBoxesMasks' : ConcatenateBoxes,  # legacy
             '_mask'                 : losses.mask(),
         })
 
