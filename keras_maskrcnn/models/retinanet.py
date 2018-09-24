@@ -1,10 +1,26 @@
+"""
+Copyright 2017-2018 Fizyr (https://fizyr.com)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import keras.models
 import keras_retinanet.layers
 import keras_retinanet.models.retinanet
 
 from ..layers.roi import RoiAlign
 from ..layers.upsample import Upsample
-from ..layers.misc import Shape, ConcatenateBoxesMasks
+from ..layers.misc import Shape, ConcatenateBoxes
 
 
 def default_mask_model(
@@ -53,13 +69,14 @@ def default_mask_model(
 
 def default_roi_submodels(num_classes):
     return [
-        ('mask', default_mask_model(num_classes)),
+        ('masks', default_mask_model(num_classes)),
     ]
 
 
 def retinanet_mask(
     inputs,
     num_classes,
+    retinanet_model=None,
     anchor_params=None,
     nms=True,
     class_specific_filter=True,
@@ -72,11 +89,12 @@ def retinanet_mask(
     This model uses the retinanet bbox model and appends a few layers to compute masks.
 
     # Arguments
-        inputs        : List of keras.layers.Input. The first input is the image, the second input the blob of masks.
-        num_classes   : Number of classes to classify.
-        anchor_params : Struct containing anchor parameters. If None, default values are used.
-        name          : Name of the model.
-        *kwargs       : Additional kwargs to pass to the retinanet bbox model.
+        inputs          : List of keras.layers.Input. The first input is the image, the second input the blob of masks.
+        num_classes     : Number of classes to classify.
+        retinanet_model : keras_retinanet.models.retinanet model, returning regression and classification values.
+        anchor_params   : Struct containing anchor parameters. If None, default values are used.
+        name            : Name of the model.
+        *kwargs         : Additional kwargs to pass to the retinanet bbox model.
     # Returns
         Model with inputs as input and as output the output of each submodel for each pyramid level and the detections.
 
@@ -96,7 +114,8 @@ def retinanet_mask(
     image = inputs
     image_shape = Shape()(image)
 
-    retinanet_model = keras_retinanet.models.retinanet.retinanet(inputs=image, num_classes=num_classes, **kwargs)
+    if retinanet_model is None:
+        retinanet_model = keras_retinanet.models.retinanet.retinanet(inputs=image, num_classes=num_classes, **kwargs)
 
     # parse outputs
     regression     = retinanet_model.outputs[0]
@@ -112,17 +131,16 @@ def retinanet_mask(
     # get the region of interest features
     top_boxes, top_classification, rois = RoiAlign()([image_shape, boxes, classification] + features)
 
-    # estimate masks
-    # TODO: Change this so that it iterates over roi_submodels
-    masks = roi_submodels[0][1](rois)
-
-    # concatenate boxes and masks together
-    boxes_masks = ConcatenateBoxesMasks(name='boxes_masks')([top_boxes, masks])
+    # execute maskrcnn submodels
+    maskrcnn_outputs = [submodel(rois) for _, submodel in roi_submodels]
 
     # perform detection filtering
-    detections = keras_retinanet.layers.FilterDetections(nms=nms, class_specific_filter=class_specific_filter, name='filtered_detections')([top_boxes, top_classification] + other + [masks])
+    detections = keras_retinanet.layers.FilterDetections(nms=nms, class_specific_filter=class_specific_filter, name='filtered_detections')([top_boxes, top_classification] + other + maskrcnn_outputs)
+
+    # concatenate boxes for loss computation
+    trainable_outputs = [ConcatenateBoxes(name=name)([top_boxes, output]) for (name, _), output in zip(roi_submodels, maskrcnn_outputs)]
 
     # reconstruct the new output
-    outputs = [regression, classification] + other + [boxes_masks] + detections
+    outputs = [regression, classification] + other + trainable_outputs + detections
 
     return keras.models.Model(inputs=inputs, outputs=outputs, name=name)

@@ -142,7 +142,7 @@ def run(generator, args):
                 # crop the mask with the related bbox size, and then draw them
                 box = annotations[m, :4].astype(int)
                 mask = masks[m][box[1]:box[3], box[0]:box[2]]
-                draw_mask(image, box, mask, label_color(annotations[m, 4].astype(int)))
+                draw_mask(image, box, mask, annotations[m, 4].astype(int))
                 # add the label caption
                 caption = '{}'.format(generator.label_to_name(annotations[m, 4]))
                 draw_caption(image, box, caption)
