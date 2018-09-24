@@ -23,6 +23,7 @@ import sys
 import keras
 import tensorflow as tf
 
+from keras_retinanet.utils.config import read_config_file
 from keras_retinanet.utils.keras_version import check_keras_version
 
 # Allow relative imports when being executed as script.
@@ -52,14 +53,16 @@ def create_generator(args):
             args.coco_path,
             'val2017',
             image_min_side=args.image_min_side,
-            image_max_side=args.image_max_side
+            image_max_side=args.image_max_side,
+            config=args.config
         )
     elif args.dataset_type == 'csv':
         validation_generator = CSVGenerator(
             args.annotations,
             args.classes,
             image_min_side=args.image_min_side,
-            image_max_side=args.image_max_side
+            image_max_side=args.image_max_side,
+            config=args.config
         )
     else:
         raise ValueError('Invalid data type received: {}'.format(args.dataset_type))
@@ -89,6 +92,7 @@ def parse_args(args):
     parser.add_argument('--save-path',          help='Path for saving images with detections.')
     parser.add_argument('--image-min-side',     help='Rescale the image so the smallest side is min_side.', type=int, default=800)
     parser.add_argument('--image-max-side',     help='Rescale the image if the largest side is larger than max_side.', type=int, default=1333)
+    parser.add_argument('--config',             help='Path to a configuration parameters .ini file.')
     parser.add_argument('--weighted-average',   help='Compute the mAP using the weighted average of precisions among classes.', action='store_true')
 
     return parser.parse_args(args)
@@ -107,6 +111,10 @@ def main(args=None):
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     keras.backend.tensorflow_backend.set_session(get_session())
+
+    # optionally load config parameters
+    if args.config:
+        args.config = read_config_file(args.config)
 
     # make save path if it doesn't exist
     if args.save_path is not None and not os.path.exists(args.save_path):
