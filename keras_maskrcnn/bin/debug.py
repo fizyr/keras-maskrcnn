@@ -25,6 +25,7 @@ import numpy as np
 from keras_retinanet.utils.transform import random_transform_generator
 from keras_retinanet.utils.visualization import draw_annotations, draw_boxes, draw_caption
 from keras_retinanet.utils.colors import label_color
+from keras_retinanet.utils.config import read_config_file
 
 # Allow relative imports when being executed as script.
 if __name__ == "__main__" and __package__ is None:
@@ -58,7 +59,8 @@ def create_generator(args):
         generator = CocoGenerator(
             args.coco_path,
             args.coco_set,
-            transform_generator=transform_generator
+            transform_generator=transform_generator,
+            config=args.config
         )
     elif args.dataset_type == 'csv':
         from ..preprocessing.csv_generator import CSVGenerator
@@ -66,7 +68,8 @@ def create_generator(args):
         generator = CSVGenerator(
             args.annotations,
             args.classes,
-            transform_generator=transform_generator
+            transform_generator=transform_generator,
+            config=args.config
         )
     else:
         raise ValueError('Invalid data type received: {}'.format(args.dataset_type))
@@ -93,6 +96,7 @@ def parse_args(args):
     parser.add_argument('--annotations', help='Show annotations on the image. Green annotations have anchors, red annotations don\'t and therefore don\'t contribute to training.', action='store_true')
     parser.add_argument('--masks', help='Show annotated masks on the image.', action='store_true')
     parser.add_argument('--random-transform', help='Randomly transform image and annotations.', action='store_true')
+    parser.add_argument('--config',           help='Path to a configuration parameters .ini file.')
 
     return parser.parse_args(args)
 
@@ -154,6 +158,10 @@ def main(args=None):
     if args is None:
         args = sys.argv[1:]
     args = parse_args(args)
+
+    # optionally load config parameters
+    if args.config:
+        args.config = read_config_file(args.config)
 
     # create the generator
     generator = create_generator(args)
