@@ -4,7 +4,16 @@ from . import backend
 
 
 def mask(iou_threshold=0.5, mask_size=(28, 28)):
-    def _mask(y_true, y_pred):
+    def _mask_conditional(y_true, y_pred):
+        # if there are no masks annotations, return 0; else, compute the masks loss
+        loss = backend.cond(
+            keras.backend.any(keras.backend.equal(keras.backend.shape(y_true), 0)),
+            lambda: 0.0,
+            lambda: _mask(y_true, y_pred, iou_threshold=iou_threshold, mask_size=mask_size)
+        )
+        return loss
+
+    def _mask(y_true, y_pred, iou_threshold=0.5, mask_size=(28, 28)):
         # split up the different predicted blobs
         boxes = y_pred[:, :, :4]
         masks = y_pred[:, :, 4:]
@@ -72,6 +81,7 @@ def mask(iou_threshold=0.5, mask_size=(28, 28)):
         normalizer = keras.backend.shape(masks)[0] * keras.backend.shape(masks)[1] * keras.backend.shape(masks)[2]
         normalizer = keras.backend.maximum(keras.backend.cast(normalizer, keras.backend.floatx()), 1)
         mask_loss  = keras.backend.sum(mask_loss) / normalizer
+
         return mask_loss
 
-    return _mask
+    return _mask_conditional

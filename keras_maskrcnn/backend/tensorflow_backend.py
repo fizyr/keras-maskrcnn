@@ -31,3 +31,7 @@ def split(*args, **kwargs):
 
 def transpose(*args, **kwargs):
     return tensorflow.transpose(*args, **kwargs)
+
+
+def cond(*args, **kwargs):
+    return tensorflow.cond(*args, **kwargs)
