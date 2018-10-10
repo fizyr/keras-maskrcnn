@@ -93,17 +93,15 @@ class CocoGenerator(Generator):
 
         # get ground truth annotations
         annotations_ids = self.coco.getAnnIds(imgIds=self.image_ids[image_index], iscrowd=False)
-
-        # outputs
-        annotations = np.zeros((0, 5))
-        masks       = []
+        annotations     = {
+            'labels': np.empty((0,)),
+            'bboxes': np.empty((0, 4)),
+            'masks': [],
+        }
 
         # some images appear to miss annotations (like image with id 257034)
         if len(annotations_ids) == 0:
-            # we need an annotation to compute targets properly... make an impossible annotation
-            annotations = np.array([[0, 0, 1, 1, 0]], dtype=keras.backend.floatx())
-            masks = [np.zeros((image_info['height'], image_info['width'], 1), dtype=np.uint8)]
-            return annotations, masks
+            return annotations
 
         # parse annotations
         coco_annotations = self.coco.loadAnns(annotations_ids)
@@ -111,11 +109,17 @@ class CocoGenerator(Generator):
             if 'segmentation' not in a:
                 raise ValueError('Expected \'segmentation\' key in annotation, got: {}'.format(a))
 
-            box = a['bbox']
-
             # some annotations have basically no width / height, skip them
-            if box[2] < 1 or box[3] < 1:
+            if a['bbox'][2] < 1 or a['bbox'][3] < 1:
                 continue
+
+            annotations['labels'] = np.concatenate([annotations['labels'], [self.coco_label_to_label(a['category_id'])]], axis=0)
+            annotations['bboxes'] = np.concatenate([annotations['bboxes'], [[
+                a['bbox'][0],
+                a['bbox'][1],
+                a['bbox'][0] + a['bbox'][2],
+                a['bbox'][1] + a['bbox'][3],
+            ]]], axis=0)
 
             mask = np.zeros((image_info['height'], image_info['width'], 1), dtype=np.uint8)
             for seg in a['segmentation']:
@@ -124,16 +128,6 @@ class CocoGenerator(Generator):
                 # draw mask
                 cv2.fillPoly(mask, [points.astype(int)], (1,))
 
-            masks.append(mask.astype(float))
+            annotations['masks'].append(mask.astype(float))
 
-            # gather everything into one blob
-            annotation        = np.zeros((1, 5))
-            annotation[0, :4] = box
-            annotation[0, -1] = self.coco_label_to_label(a['category_id'])
-            annotations       = np.append(annotations, annotation, axis=0)
-
-        # transform from [x, y, w, h] to [x1, y1, x2, y2]
-        annotations[:, 2] = annotations[:, 0] + annotations[:, 2]
-        annotations[:, 3] = annotations[:, 1] + annotations[:, 3]
-
-        return annotations, masks
+        return annotations
