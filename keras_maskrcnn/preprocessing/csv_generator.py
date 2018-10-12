@@ -169,18 +169,21 @@ class CSVGenerator(Generator):
         path   = self.image_names[image_index]
         annots = self.image_data[path]
 
-        # find mask size in order to allocate the right dimension for the annotations
-        annotations  = np.zeros((len(annots), 5))
-        masks        = []
+        annotations     = {
+            'labels': np.empty((len(annots),)),
+            'bboxes': np.empty((len(annots), 4)),
+            'masks': [],
+        }
 
         for idx, annot in enumerate(annots):
-            annotations[idx, 0]  = float(annot['x1'])
-            annotations[idx, 1]  = float(annot['y1'])
-            annotations[idx, 2]  = float(annot['x2'])
-            annotations[idx, 3]  = float(annot['y2'])
-            annotations[idx, 4]  = self.name_to_label(annot['class'])
+            annotations['bboxes'][idx, 0] = float(annot['x1'])
+            annotations['bboxes'][idx, 1] = float(annot['y1'])
+            annotations['bboxes'][idx, 2] = float(annot['x2'])
+            annotations['bboxes'][idx, 3] = float(annot['y2'])
+            annotations['labels'][idx]    = self.name_to_label(annot['class'])
+
             mask = cv2.imread(os.path.join(self.base_dir, annot['mask_path']), cv2.IMREAD_GRAYSCALE)
             mask = (mask > 0).astype(np.uint8)  # convert from 0-255 to binary mask
-            masks.append(np.expand_dims(mask, axis=-1))
+            annotations['masks'].append(np.expand_dims(mask, axis=-1))
 
-        return annotations, masks
+        return annotations
