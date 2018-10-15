@@ -26,6 +26,7 @@ from keras_retinanet.utils.transform import random_transform_generator
 from keras_retinanet.utils.visualization import draw_annotations, draw_boxes, draw_caption
 from keras_retinanet.utils.colors import label_color
 from keras_retinanet.utils.config import read_config_file
+from keras_retinanet.utils.anchors import anchors_for_shape, compute_gt_annotations
 
 # Allow relative imports when being executed as script.
 if __name__ == "__main__" and __package__ is None:
@@ -101,29 +102,32 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def run(generator, args):
+def run(generator, args, anchor_params):
     # display images, one at a time
     for i in range(generator.size()):
         # load the data
-        image              = generator.load_image(i)
-        annotations, masks = generator.load_annotations(i)
+        image       = generator.load_image(i)
+        annotations = generator.load_annotations(i)
 
         # apply random transformations
         if args.random_transform:
-            image, annotations, masks = generator.random_transform_group_entry(image, annotations, masks)
+            image, annotations = generator.random_transform_group_entry(image, annotations)
 
         # resize the image and annotations
         if args.resize:
             image, image_scale  = generator.resize_image(image)
-            annotations[:, :4] *= image_scale
-            for m in range(len(masks)):
-                masks[m], _ = generator.resize_image(masks[m])
+            annotations['bboxes'] *= image_scale
+            for m in range(len(annotations['masks'])):
+                annotations['masks'][m], _ = generator.resize_image(annotations['masks'][m])
+
+        anchors = anchors_for_shape(image.shape, anchor_params=anchor_params)
+        positive_indices, _, max_indices = compute_gt_annotations(anchors, annotations['bboxes'])
 
         # draw anchors on the image
         if args.anchors:
             anchors = generator.generate_anchors(image.shape)
-            labels, _, _ = generator.compute_anchor_targets(anchors, [image], [annotations], generator.num_classes())
-            draw_boxes(image, anchors[np.max(labels[0], axis=1) == 1], (255, 255, 0), thickness=1)
+            positive_indices, _, max_indices = compute_gt_annotations(anchors, annotations['bboxes'])
+            draw_boxes(image, anchors[positive_indices], (255, 255, 0), thickness=1)
 
         # draw annotations on the image
         if args.annotations:
@@ -132,19 +136,17 @@ def run(generator, args):
 
             # draw regressed anchors in green to override most red annotations
             # result is that annotations without anchors are red, with anchors are green
-            anchors = generator.generate_anchors(image.shape)
-            labels, _, boxes = generator.compute_anchor_targets(anchors, [image], [annotations], generator.num_classes())
-            draw_boxes(image, boxes[0, np.max(labels[0], axis=1) == 1], (0, 255, 0))
+            draw_boxes(image, annotations['bboxes'][max_indices[positive_indices], :], (0, 255, 0))
 
         # Draw masks over the image with random colours
         if args.masks:
-            for m in range(len(masks)):
+            for m in range(len(annotations['masks'])):
                 # crop the mask with the related bbox size, and then draw them
-                box = annotations[m, :4].astype(int)
-                mask = masks[m][box[1]:box[3], box[0]:box[2]]
-                draw_mask(image, box, mask, annotations[m, 4].astype(int))
+                box = annotations['bboxes'][m].astype(int)
+                mask = annotations['masks'][m][box[1]:box[3], box[0]:box[2]]
+                draw_mask(image, box, mask, annotations['labels'][m].astype(int))
                 # add the label caption
-                caption = '{}'.format(generator.label_to_name(annotations[m, 4]))
+                caption = '{}'.format(generator.label_to_name(annotations['labels'][m]))
                 draw_caption(image, box, caption)
 
         cv2.imshow('Image', image)
@@ -159,21 +161,26 @@ def main(args=None):
         args = sys.argv[1:]
     args = parse_args(args)
 
+    # create the generator
+    generator = create_generator(args)
+
     # optionally load config parameters
     if args.config:
         args.config = read_config_file(args.config)
 
-    # create the generator
-    generator = create_generator(args)
+    # optionally load anchor parameters
+    anchor_params = None
+    if args.config and 'anchor_parameters' in args.config:
+        anchor_params = parse_anchor_parameters(args.config)
 
     # create the display window
     cv2.namedWindow('Image', cv2.WINDOW_NORMAL)
 
     if args.loop:
-        while run(generator, args):
+        while run(generator, args, anchor_params):
             pass
     else:
-        run(generator, args)
+        run(generator, args, anchor_params)
 
 if __name__ == '__main__':
     main()
