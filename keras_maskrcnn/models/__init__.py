@@ -18,7 +18,7 @@ class Backbone(keras_retinanet.models.Backbone):
             'Shape'                 : Shape,
             'ConcatenateBoxes'      : ConcatenateBoxes,
             'ConcatenateBoxesMasks' : ConcatenateBoxes,  # legacy
-            '_mask'                 : losses.mask(),
+            '_mask_conditional'     : losses.mask(),
         })
 
     def maskrcnn(self, *args, **kwargs):
