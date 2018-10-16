@@ -6,9 +6,8 @@ from .. import backend
 
 
 class RoiAlign(keras.layers.Layer):
-    def __init__(self, top_k=1000, crop_size=(14, 14), **kwargs):
+    def __init__(self, crop_size=(14, 14), **kwargs):
         self.crop_size = crop_size
-        self.top_k = top_k
 
         super(RoiAlign, self).__init__(**kwargs)
 
@@ -30,37 +29,24 @@ class RoiAlign(keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         # TODO: Support batch_size > 1
-        image_shape    = keras.backend.cast(inputs[0], keras.backend.floatx())
-        boxes          = keras.backend.stop_gradient(inputs[1][0])
-        classification = keras.backend.stop_gradient(inputs[2][0])
-        fpn            = [keras.backend.stop_gradient(i[0]) for i in inputs[3:]]
-
-        # compute best scores for each detection
-        scores = keras.backend.max(classification, axis=1)
-
-        # select the top k for mask ROI computation
-        _, indices     = keras_retinanet.backend.top_k(scores, k=keras.backend.minimum(self.top_k, keras.backend.shape(boxes)[0]), sorted=False)
-        boxes          = keras.backend.gather(boxes, indices)
-        classification = keras.backend.gather(classification, indices)
+        image_shape = keras.backend.cast(inputs[0], keras.backend.floatx())
+        boxes       = keras.backend.stop_gradient(inputs[1][0])
+        scores      = keras.backend.stop_gradient(inputs[2][0])
+        fpn         = [keras.backend.stop_gradient(i[0]) for i in inputs[3:]]
 
         # compute from which level to get features from
         target_levels = self.map_to_level(boxes)
 
         # process each pyramid independently
-        rois                   = []
-        ordered_boxes          = []
-        ordered_classification = []
+        rois           = []
+        ordered_indices = []
         for i in range(len(fpn)):
             # select the boxes and classification from this pyramid level
             indices = keras_retinanet.backend.where(keras.backend.equal(target_levels, i))
+            ordered_indices.append(indices)
 
-            level_boxes          = keras_retinanet.backend.gather_nd(boxes, indices)
-            level_classification = keras_retinanet.backend.gather_nd(classification, indices)
-
-            ordered_boxes.append(level_boxes)
-            ordered_classification.append(level_classification)
-
-            fpn_shape = keras.backend.cast(keras.backend.shape(fpn[i]), dtype=keras.backend.floatx())
+            level_boxes = keras_retinanet.backend.gather_nd(boxes, indices)
+            fpn_shape   = keras.backend.cast(keras.backend.shape(fpn[i]), dtype=keras.backend.floatx())
 
             # convert to expected format for crop_and_resize
             x1 = level_boxes[:, 0]
@@ -82,29 +68,22 @@ class RoiAlign(keras.layers.Layer):
                 self.crop_size
             ))
 
-        # reassemble the boxes in a different order
-        boxes          = keras.backend.concatenate(ordered_boxes, axis=0)
-        classification = keras.backend.concatenate(ordered_classification, axis=0)
-
         # concatenate rois to one blob
         rois = keras.backend.concatenate(rois, axis=0)
-        return [keras.backend.expand_dims(boxes, axis=0), keras.backend.expand_dims(classification, axis=0), keras.backend.expand_dims(rois, axis=0)]
+
+        # reorder rois back to original order
+        indices = keras.backend.concatenate(ordered_indices, axis=0)
+        rois    = keras_retinanet.backend.scatter_nd(indices, rois, keras.backend.cast(keras.backend.shape(rois), 'int64'))
+
+        return keras.backend.expand_dims(rois, axis=0)
 
     def compute_output_shape(self, input_shape):
-        return [
-            (input_shape[1][0], None, input_shape[1][2]),
-            (input_shape[2][0], None, input_shape[2][2]),
-            (input_shape[1][0], None, self.crop_size[0], self.crop_size[1], input_shape[3][-1])
-        ]
-
-    def compute_mask(self, inputs, mask=None):
-        return 3 * [None]
+        return (input_shape[1][0], None, self.crop_size[0], self.crop_size[1], input_shape[3][-1])
 
     def get_config(self):
         config = super(RoiAlign, self).get_config()
         config.update({
             'crop_size' : self.crop_size,
-            'top_k'     : self.top_k,
         })
 
         return config

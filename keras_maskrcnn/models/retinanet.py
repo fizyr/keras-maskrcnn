@@ -128,19 +128,28 @@ def retinanet_mask(
     boxes = keras_retinanet.layers.RegressBoxes(name='boxes')([anchors, regression])
     boxes = keras_retinanet.layers.ClipBoxes(name='clipped_boxes')([image, boxes])
 
+    # filter detections (apply NMS / score threshold / select top-k)
+    detections = keras_retinanet.layers.FilterDetections(
+        nms                   = nms,
+        class_specific_filter = class_specific_filter,
+        max_detections        = 100,
+        name                  = 'filtered_detections'
+    )([boxes, classification] + other)
+
+    # split up in known outputs and "other"
+    boxes  = detections[0]
+    scores = detections[1]
+
     # get the region of interest features
-    top_boxes, top_classification, rois = RoiAlign()([image_shape, boxes, classification] + features)
+    rois = RoiAlign()([image_shape, boxes, scores] + features)
 
     # execute maskrcnn submodels
     maskrcnn_outputs = [submodel(rois) for _, submodel in roi_submodels]
 
-    # perform detection filtering
-    detections = keras_retinanet.layers.FilterDetections(nms=nms, class_specific_filter=class_specific_filter, name='filtered_detections')([top_boxes, top_classification] + other + maskrcnn_outputs)
-
     # concatenate boxes for loss computation
-    trainable_outputs = [ConcatenateBoxes(name=name)([top_boxes, output]) for (name, _), output in zip(roi_submodels, maskrcnn_outputs)]
+    trainable_outputs = [ConcatenateBoxes(name=name)([boxes, output]) for (name, _), output in zip(roi_submodels, maskrcnn_outputs)]
 
     # reconstruct the new output
-    outputs = [regression, classification] + other + trainable_outputs + detections
+    outputs = [regression, classification] + other + trainable_outputs + detections + maskrcnn_outputs
 
     return keras.models.Model(inputs=inputs, outputs=outputs, name=name)
