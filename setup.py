@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='keras-maskrcnn',
-    version='0.2.0',
+    version='0.2.1',
     description='Keras implementation of MaskRCNN instance aware segmentation.',
     url='https://github.com/fizyr/keras-maskrcnn',
     maintainer='Hans Gaiser',
