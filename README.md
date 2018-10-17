@@ -1,4 +1,6 @@
-# Keras MaskRCNN [![Build Status](https://travis-ci.org/fizyr/keras-maskrcnn.svg?branch=master)](https://travis-ci.org/fizyr/keras-maskrcnn)
+# Keras MaskRCNN [![Build Status](https://travis-ci.org/fizyr/keras-maskrcnn.svg?branch=master)](https://travis-ci.org/fizyr/keras-maskrcnn) [![DOI](https://zenodo.org/badge/124870610.svg)](https://zenodo.org/badge/latestdoi/124870610)
+
+
 
 Keras implementation of MaskRNN instance aware segmentation as described in [Mask R-CNN](https://arxiv.org/abs/1703.06870)
 by Kaiming He, Georgia Gkioxari, Piotr Dollár, Ross Girshick, using RetinaNet as base.

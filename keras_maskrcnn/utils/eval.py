@@ -138,13 +138,13 @@ def _get_annotations(generator):
 
     for i in range(generator.size()):
         # load the annotations
-        annotations, masks = generator.load_annotations(i)
-        masks = np.stack(masks, axis=0)
+        annotations = generator.load_annotations(i)
+        annotations['masks'] = np.stack(annotations['masks'], axis=0)
 
         # copy detections to all_annotations
         for label in range(generator.num_classes()):
-            all_annotations[i][label] = annotations[annotations[:, 4] == label, :4].copy()
-            all_masks[i][label]       = masks[annotations[:, 4] == label, ..., 0].copy()
+            all_annotations[i][label] = annotations['bboxes'][annotations['labels'] == label, :].copy()
+            all_masks[i][label]       = annotations['masks'][annotations['labels'] == label, ..., 0].copy()
 
         print('{}/{}'.format(i + 1, generator.size()), end='\r')
 
