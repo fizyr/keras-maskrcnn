@@ -25,7 +25,7 @@ import numpy as np
 from keras_retinanet.utils.transform import random_transform_generator
 from keras_retinanet.utils.visualization import draw_annotations, draw_boxes, draw_caption
 from keras_retinanet.utils.colors import label_color
-from keras_retinanet.utils.config import read_config_file
+from keras_retinanet.utils.config import read_config_file, parse_anchor_parameters
 from keras_retinanet.utils.anchors import anchors_for_shape, compute_gt_annotations
 
 # Allow relative imports when being executed as script.
