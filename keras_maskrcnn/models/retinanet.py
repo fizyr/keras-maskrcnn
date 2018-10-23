@@ -115,7 +115,12 @@ def retinanet_mask(
     image_shape = Shape()(image)
 
     if retinanet_model is None:
-        retinanet_model = keras_retinanet.models.retinanet.retinanet(inputs=image, num_classes=num_classes, **kwargs)
+        retinanet_model = keras_retinanet.models.retinanet.retinanet(
+            inputs=image,
+            num_classes=num_classes,
+            num_anchors=anchor_params.num_anchors(),
+            **kwargs
+        )
 
     # parse outputs
     regression     = retinanet_model.outputs[0]
