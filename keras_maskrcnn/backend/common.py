@@ -18,7 +18,7 @@ import keras.backend
 
 
 def log2(x):
-    return keras.backend.log(x) / keras.backend.log(2.0)
+    return keras.backend.log(x) / keras.backend.log(keras.backend.cast(2.0, x.dtype))
 
 
 def overlap(a, b):
