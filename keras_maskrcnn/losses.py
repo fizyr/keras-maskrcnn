@@ -8,7 +8,7 @@ def mask(iou_threshold=0.5, mask_size=(28, 28)):
         # if there are no masks annotations, return 0; else, compute the masks loss
         loss = backend.cond(
             keras.backend.any(keras.backend.equal(keras.backend.shape(y_true), 0)),
-            lambda: 0.0,
+            lambda: keras.backend.cast_to_floatx(0.0),
             lambda: _mask(y_true, y_pred, iou_threshold=iou_threshold, mask_size=mask_size)
         )
         return loss
