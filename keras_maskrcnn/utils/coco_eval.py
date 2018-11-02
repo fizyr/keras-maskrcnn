@@ -58,6 +58,7 @@ def evaluate_coco(generator, model, threshold=0.05):
 
             b = box.astype(int)  # box (x, y, w, h) as one int vector
 
+            mask = mask.astype(np.float32)
             mask = cv2.resize(mask[:, :, label], (b[2], b[3]))
             mask = (mask > 0.5).astype(np.uint8)  # binarize for encoding as RLE
 

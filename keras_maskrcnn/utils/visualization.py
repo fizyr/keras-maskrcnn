@@ -19,6 +19,7 @@ def draw_mask(image, box, mask, label=None, color=None, binarize_threshold=0.5):
         color = (0, 255, 0)
 
     # resize to fit the box
+    mask = mask.astype(np.float32)
     mask = cv2.resize(mask, (box[2] - box[0], box[3] - box[1]))
 
     # binarize the mask
