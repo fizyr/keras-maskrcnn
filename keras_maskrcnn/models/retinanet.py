@@ -106,7 +106,7 @@ def retinanet_mask(
     name='retinanet-mask',
     roi_submodels=None,
     mask_dtype=keras.backend.floatx(),
-    modifiers=None
+    modifier=None,
     **kwargs
 ):
     """ Construct a RetinaNet mask model on top of a retinanet bbox model.
@@ -118,11 +118,11 @@ def retinanet_mask(
         num_classes           : Number of classes to classify.
         retinanet_model       : keras_retinanet.models.retinanet model, returning regression and classification values.
         anchor_params         : Struct containing anchor parameters. If None, default values are used.
-        nms                   : Use NMS
-        class_specific_filter : Use class specific filtering
-        roi_submodels         : Submodels for elaborating ROIs
-        mask_dtype            : Data type of the masks, can be different form the main one
-        modifiers             : Modifiers, such as freeze
+        nms                   : Use NMS.
+        class_specific_filter : Use class specific filtering.
+        roi_submodels         : Submodels for elaborating ROIs.
+        mask_dtype            : Data type of the masks, can be different form the main one.
+        modifier              : Modifier for the retinanet underlying model, such as freeze.
         name                  : Name of the model.
         *kwargs               : Additional kwargs to pass to the retinanet bbox model.
     # Returns
@@ -154,6 +154,9 @@ def retinanet_mask(
             num_anchors=anchor_params.num_anchors(),
             **kwargs
         )
+
+    if modifier:
+        retinanet_model = modifier(retinanet_model)
 
     # parse outputs
     regression     = retinanet_model.outputs[0]
