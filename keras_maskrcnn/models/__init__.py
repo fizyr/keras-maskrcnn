@@ -10,7 +10,7 @@ class Backbone(keras_retinanet.models.Backbone):
         # a dictionary mapping custom layer names to the correct classes
         from ..layers.roi import RoiAlign
         from ..layers.upsample import Upsample
-        from ..layers.misc import Shape, ConcatenateBoxes
+        from ..layers.misc import Shape, ConcatenateBoxes, Cast
         from .. import losses
         self.custom_objects.update({
             'RoiAlign'              : RoiAlign,
@@ -19,6 +19,7 @@ class Backbone(keras_retinanet.models.Backbone):
             'ConcatenateBoxes'      : ConcatenateBoxes,
             'ConcatenateBoxesMasks' : ConcatenateBoxes,  # legacy
             '_mask_conditional'     : losses.mask(),
+            'Cast'                  : Cast,
         })
 
     def maskrcnn(self, *args, **kwargs):
