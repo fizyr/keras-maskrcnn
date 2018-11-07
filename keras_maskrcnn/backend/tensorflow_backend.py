@@ -16,17 +16,18 @@ limitations under the License.
 
 import tensorflow
 
+
 def crop_and_resize(image, boxes, box_ind, crop_size, **kwargs):
     return tensorflow.cast(
-            tensorflow.image.crop_and_resize(
-                image=image,
-                boxes=tensorflow.cast(boxes, tensorflow.float32),
-                box_ind=box_ind,
-                crop_size=crop_size,
-                **kwargs
-            ),
-            image.dtype
-        )
+        tensorflow.image.crop_and_resize(
+            image=image,
+            boxes=tensorflow.cast(boxes, tensorflow.float32),
+            box_ind=box_ind,
+            crop_size=crop_size,
+            **kwargs
+        ),
+        image.dtype
+    )
 
 
 def floor(*args, **kwargs):

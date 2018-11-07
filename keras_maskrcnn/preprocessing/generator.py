@@ -152,7 +152,7 @@ class Generator(object):
     def preprocess_image(self, image):
         return preprocess_image(image)
 
-    def cast_image_to_floatx(self,image):
+    def cast_image_to_floatx(self, image):
         return cast_image_to_floatx(image)
 
     def preprocess_group_entry(self, image, annotations):

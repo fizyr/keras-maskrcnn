@@ -41,15 +41,15 @@ class ConcatenateBoxes(keras.layers.Layer):
         boxes_shape, other_shape = input_shape
         return boxes_shape[:2] + (np.prod([s for s in other_shape[2:]]) + 4,)
 
+
 class Cast(keras.layers.Layer):
     def __init__(self, dtype=None, *args, **kwargs):
         if dtype is None:
-            dtype=keras.backend.floatx()
-        self.dtype  = dtype
+            dtype = keras.backend.floatx()
+        self.dtype = dtype
 
         super(Cast, self).__init__(*args, **kwargs)
 
     def call(self, inputs, **kwargs):
         outputs = keras.backend.cast(inputs, self.dtype)
         return outputs
-

@@ -80,7 +80,6 @@ def default_mask_model(
         activation='sigmoid'
     ), name='roi_mask')(outputs)
 
-
     # casting back to the underlying keras-retinanet model data type
     if mask_dtype != retinanet_dtype:
         outputs = keras.layers.TimeDistributed(
