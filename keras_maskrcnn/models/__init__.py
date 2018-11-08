@@ -56,3 +56,20 @@ def load_model(filepath, backbone_name='resnet50'):
     """
     import keras.models
     return keras.models.load_model(filepath, custom_objects=backbone(backbone_name).custom_objects)
+
+
+def convert_model(model):
+    """ Converts a training model to an inference model.
+
+    Args
+        model : A retinanet training model.
+
+    Returns
+        A keras.models.Model object.
+
+    Raises
+        ImportError: if h5py is not available.
+        ValueError: In case of an invalid savefile.
+    """
+    # filter out the trainable outputs and return a new model
+    return keras.models.Model(inputs=model.inputs, outputs=model.outputs[-((model.outputs - 5) / 2 + 3):], name=model.name)
