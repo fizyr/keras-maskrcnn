@@ -119,11 +119,11 @@ def retinanet_mask(
         anchor_params         : Struct containing anchor parameters. If None, default values are used.
         nms                   : Use NMS.
         class_specific_filter : Use class specific filtering.
-        roi_submodels         : Submodels for elaborating ROIs.
-        mask_dtype            : Data type of the masks, can be different form the main one.
-        modifier              : Modifier for the retinanet underlying model, such as freeze.
+        roi_submodels         : Submodels for processing ROIs.
+        mask_dtype            : Data type of the masks, can be different from the main one.
+        modifier              : Modifier for the underlying retinanet model, such as freeze.
         name                  : Name of the model.
-        *kwargs               : Additional kwargs to pass to the retinanet bbox model.
+        **kwargs              : Additional kwargs to pass to the retinanet bbox model.
     # Returns
         Model with inputs as input and as output the output of each submodel for each pyramid level and the detections.
 
