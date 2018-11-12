@@ -1,3 +1,4 @@
+import keras.models
 import keras_retinanet.models
 
 
@@ -72,4 +73,4 @@ def convert_model(model):
         ValueError: In case of an invalid savefile.
     """
     # filter out the trainable outputs and return a new model
-    return keras.models.Model(inputs=model.inputs, outputs=model.outputs[-((model.outputs - 5) / 2 + 3):], name=model.name)
+    return keras.models.Model(inputs=model.inputs, outputs=model.outputs[-(int((len(model.outputs) - 5) / 2) + 3):], name=model.name)
