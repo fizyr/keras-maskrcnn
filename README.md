@@ -142,3 +142,6 @@ cow,0
 cat,1
 bird,2
 ```
+
+### Discussions
+Feel free to join the `#keras-maskrcnn` [Keras Slack](https://keras-slack-autojoin.herokuapp.com/) channel for discussions and questions.
