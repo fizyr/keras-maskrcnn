@@ -14,13 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+
+import keras
+import keras.backend
+
 import keras.models
 import keras_retinanet.layers
 import keras_retinanet.models.retinanet
+import keras_retinanet.backend.tensorflow_backend as backend
 
 from ..layers.roi import RoiAlign
 from ..layers.upsample import Upsample
-from ..layers.misc import Shape, ConcatenateBoxes
+from ..layers.misc import Shape, ConcatenateBoxes, Cast
 
 
 def default_mask_model(
@@ -29,8 +34,11 @@ def default_mask_model(
     mask_feature_size=256,
     roi_size=(14, 14),
     mask_size=(28, 28),
-    name='mask_submodel'
+    name='mask_submodel',
+    mask_dtype=keras.backend.floatx(),
+    retinanet_dtype=keras.backend.floatx()
 ):
+
     options = {
         'kernel_size'        : 3,
         'strides'            : 1,
@@ -42,6 +50,14 @@ def default_mask_model(
 
     inputs  = keras.layers.Input(shape=(None, roi_size[0], roi_size[1], pyramid_feature_size))
     outputs = inputs
+
+    # casting to the desidered data type, which may be different than
+    # the one used for the underlying keras-retinanet model
+    if mask_dtype != retinanet_dtype:
+        outputs = keras.layers.TimeDistributed(
+            Cast(dtype=mask_dtype),
+            name='cast_masks')(outputs)
+
     for i in range(4):
         outputs = keras.layers.TimeDistributed(keras.layers.Conv2D(
             filters=mask_feature_size,
@@ -64,12 +80,18 @@ def default_mask_model(
         activation='sigmoid'
     ), name='roi_mask')(outputs)
 
+    # casting back to the underlying keras-retinanet model data type
+    if mask_dtype != retinanet_dtype:
+        outputs = keras.layers.TimeDistributed(
+            Cast(dtype=retinanet_dtype),
+            name='recast_masks')(outputs)
+
     return keras.models.Model(inputs=inputs, outputs=outputs, name=name)
 
 
-def default_roi_submodels(num_classes):
+def default_roi_submodels(num_classes, mask_dtype=keras.backend.floatx(), retinanet_dtype=keras.backend.floatx()):
     return [
-        ('masks', default_mask_model(num_classes)),
+        ('masks', default_mask_model(num_classes, mask_dtype=mask_dtype, retinanet_dtype=retinanet_dtype)),
     ]
 
 
@@ -82,6 +104,8 @@ def retinanet_mask(
     class_specific_filter=True,
     name='retinanet-mask',
     roi_submodels=None,
+    mask_dtype=keras.backend.floatx(),
+    modifier=None,
     **kwargs
 ):
     """ Construct a RetinaNet mask model on top of a retinanet bbox model.
@@ -89,12 +113,17 @@ def retinanet_mask(
     This model uses the retinanet bbox model and appends a few layers to compute masks.
 
     # Arguments
-        inputs          : List of keras.layers.Input. The first input is the image, the second input the blob of masks.
-        num_classes     : Number of classes to classify.
-        retinanet_model : keras_retinanet.models.retinanet model, returning regression and classification values.
-        anchor_params   : Struct containing anchor parameters. If None, default values are used.
-        name            : Name of the model.
-        *kwargs         : Additional kwargs to pass to the retinanet bbox model.
+        inputs                : List of keras.layers.Input. The first input is the image, the second input the blob of masks.
+        num_classes           : Number of classes to classify.
+        retinanet_model       : keras_retinanet.models.retinanet model, returning regression and classification values.
+        anchor_params         : Struct containing anchor parameters. If None, default values are used.
+        nms                   : Use NMS.
+        class_specific_filter : Use class specific filtering.
+        roi_submodels         : Submodels for processing ROIs.
+        mask_dtype            : Data type of the masks, can be different from the main one.
+        modifier              : Modifier for the underlying retinanet model, such as freeze.
+        name                  : Name of the model.
+        **kwargs              : Additional kwargs to pass to the retinanet bbox model.
     # Returns
         Model with inputs as input and as output the output of each submodel for each pyramid level and the detections.
 
@@ -109,7 +138,10 @@ def retinanet_mask(
         anchor_params = keras_retinanet.utils.anchors.AnchorParameters.default
 
     if roi_submodels is None:
-        roi_submodels = default_roi_submodels(num_classes)
+        retinanet_dtype = keras.backend.floatx()
+        keras.backend.set_floatx(mask_dtype)
+        roi_submodels = default_roi_submodels(num_classes, mask_dtype, retinanet_dtype)
+        keras.backend.set_floatx(retinanet_dtype)
 
     image = inputs
     image_shape = Shape()(image)
@@ -121,6 +153,9 @@ def retinanet_mask(
             num_anchors=anchor_params.num_anchors(),
             **kwargs
         )
+
+    if modifier:
+        retinanet_model = modifier(retinanet_model)
 
     # parse outputs
     regression     = retinanet_model.outputs[0]
