@@ -34,7 +34,6 @@ from keras_retinanet.utils.image import (
     apply_transform,
     preprocess_image,
     resize_image,
-    cast_image_to_floatx,
 )
 from keras_retinanet.utils.transform import transform_aabb
 
@@ -152,9 +151,6 @@ class Generator(object):
     def preprocess_image(self, image):
         return preprocess_image(image)
 
-    def cast_image_to_floatx(self, image):
-        return cast_image_to_floatx(image)
-
     def preprocess_group_entry(self, image, annotations):
         """ Preprocess image and its annotations.
         """
@@ -175,7 +171,7 @@ class Generator(object):
         annotations['bboxes'] *= image_scale
 
         # convert to the wanted keras floatx
-        image = self.cast_image_to_floatx(image)
+        image = keras.backend.cast_to_floatx(image)
 
         return image, annotations
 
