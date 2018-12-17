@@ -234,6 +234,10 @@ def parse_args(args):
     parser.add_argument('--config',           help='Path to a configuration parameters .ini file.')
     parser.add_argument('--weighted-average', help='Compute the mAP using the weighted average of precisions among classes.', action='store_true')
 
+    # Fit generator arguments
+    parser.add_argument('--workers', help='Number of multiprocessing workers. To disable multiprocessing, set workers to 0', type=int, default=1)
+    parser.add_argument('--max-queue-size', help='Queue length for multiprocessing workers in fit generator.', type=int, default=10)
+
     return check_args(parser.parse_args(args))
 
 
@@ -299,14 +303,21 @@ def main(args=None):
         args,
     )
 
+    # Use multiprocessing if workers > 0
+    if args.workers > 0:
+        use_multiprocessing = True
+    else:
+        use_multiprocessing = False
+
     # start training
     training_model.fit_generator(
         generator=train_generator,
         steps_per_epoch=args.steps,
         epochs=args.epochs,
         verbose=1,
-        callbacks=callbacks,
-        max_queue_size=1,
+        workers=args.workers,
+        use_multiprocessing=use_multiprocessing,
+        max_queue_size=args.max_queue_size
     )
 
 if __name__ == '__main__':
