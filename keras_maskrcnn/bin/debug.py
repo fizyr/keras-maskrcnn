@@ -31,7 +31,7 @@ from keras_retinanet.utils.anchors import anchors_for_shape, compute_gt_annotati
 # Allow relative imports when being executed as script.
 if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-    import keras_retinanet.bin
+    import keras_maskrcnn.bin
     __package__ = "keras_maskrcnn.bin"
 
 # Change these to absolute imports if you copy this script outside the keras_retinanet package.
