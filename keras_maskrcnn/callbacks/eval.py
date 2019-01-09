@@ -55,7 +55,7 @@ class Evaluate(keras.callbacks.Callback):
 
         super(Evaluate, self).__init__()
 
-    def on_epoch_end(self, epoch, logs={}):
+    def on_epoch_end(self, epoch, logs):
         # run evaluation
         average_precisions = evaluate(
             self.generator,
@@ -89,3 +89,5 @@ class Evaluate(keras.callbacks.Callback):
 
         if self.verbose == 1:
             print('mAP: {:.4f}'.format(self.mean_ap))
+
+        logs['mAP'] = self.mean_ap
