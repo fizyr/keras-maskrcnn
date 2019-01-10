@@ -55,7 +55,7 @@ class Evaluate(keras.callbacks.Callback):
 
         super(Evaluate, self).__init__()
 
-    def on_epoch_end(self, epoch, logs={}):
+    def on_epoch_end(self, epoch, logs):
         # run evaluation
         average_precisions = evaluate(
             self.generator,
@@ -75,17 +75,19 @@ class Evaluate(keras.callbacks.Callback):
             total_instances.append(num_annotations)
             precisions.append(average_precision)
         if self.weighted_average:
-            self.mean_ap = sum([a * b for a, b in zip(total_instances, precisions)]) / sum(total_instances)
+            mean_ap = sum([a * b for a, b in zip(total_instances, precisions)]) / sum(total_instances)
         else:
-            self.mean_ap = sum(precisions) / sum(x > 0 for x in total_instances)
+            mean_ap = sum(precisions) / sum(x > 0 for x in total_instances)
 
         if self.tensorboard is not None and self.tensorboard.writer is not None:
             import tensorflow as tf
             summary = tf.Summary()
             summary_value = summary.value.add()
-            summary_value.simple_value = self.mean_ap
+            summary_value.simple_value = mean_ap
             summary_value.tag = "mAP"
             self.tensorboard.writer.add_summary(summary, epoch)
 
         if self.verbose == 1:
-            print('mAP: {:.4f}'.format(self.mean_ap))
+            print('mAP: {:.4f}'.format(mean_ap))
+
+        logs['mAP'] = mean_ap
