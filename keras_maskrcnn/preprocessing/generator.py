@@ -119,7 +119,11 @@ class Generator(keras.utils.Sequence):
                     annotations['bboxes'][invalid_indices, :]
                 ))
                 for k in annotations_group[index].keys():
-                    annotations_group[index][k] = np.delete(annotations[k], invalid_indices, axis=0)
+                    if type(annotations_group[index][k]) == list:
+                        for i in invalid_indices:
+                            del annotations_group[index][k][i]
+                    else:
+                        annotations_group[index][k] = np.delete(annotations[k], invalid_indices, axis=0)
 
         return image_group, annotations_group
 
