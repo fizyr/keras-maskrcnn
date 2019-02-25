@@ -120,7 +120,7 @@ class Generator(keras.utils.Sequence):
                 ))
                 for k in annotations_group[index].keys():
                     if type(annotations_group[index][k]) == list:
-                        for i in invalid_indices:
+                        for i in invalid_indices[::-1]:
                             del annotations_group[index][k][i]
                     else:
                         annotations_group[index][k] = np.delete(annotations[k], invalid_indices, axis=0)
