@@ -16,6 +16,7 @@ In theory RetinaNet can be configured to act as a RPN network, which would then 
 1) Clone this repository.
 2) Install [keras-retinanet](https://github.com/fizyr/keras-retinanet) (`pip install keras-retinanet --user`). Make sure `tensorflow` is installed and is using the GPU.
 3) Optionally, install `pycocotools` if you want to train / test on the MS COCO dataset by running `pip install --user git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI`.
+4) In the repository, execute `pip install . --user`, or run `pip install keras-maskrcnn --user` to install the latest release.
 
 ## Testing
 An example of testing the network can be seen in [this Notebook](https://github.com/fizyr/keras-maskrcnn/blob/master/examples/ResNet50MaskRCNN.ipynb).
