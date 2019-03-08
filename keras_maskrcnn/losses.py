@@ -56,6 +56,7 @@ def mask(iou_threshold=0.5, mask_size=(28, 28), parallel_iterations=32):
 
     return _mask_conditional
 
+
 def compute_loss(
     boxes,
     masks,
@@ -64,7 +65,7 @@ def compute_loss(
     width,
     height,
     iou_threshold=0.5,
-    mask_size=(28,28)
+    mask_size=(28, 28)
 ):
     # compute overlap of boxes with annotations
     iou                  = backend.overlap(boxes, annotations)
