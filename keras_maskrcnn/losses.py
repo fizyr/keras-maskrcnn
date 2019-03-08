@@ -57,7 +57,7 @@ def mask(iou_threshold=0.5, mask_size=(28, 28), parallel_iterations=32):
     return _mask_conditional
 
 
-def compute_loss(
+def compute_mask_loss(
     boxes,
     masks,
     annotations,
