@@ -6,8 +6,9 @@ from .. import backend
 
 
 class RoiAlign(keras.layers.Layer):
-    def __init__(self, crop_size=(14, 14), **kwargs):
+    def __init__(self, crop_size=(14, 14), parallel_iterations=32, **kwargs):
         self.crop_size = crop_size
+        self.parallel_iterations = parallel_iterations
 
         super(RoiAlign, self).__init__(**kwargs)
 
@@ -28,54 +29,67 @@ class RoiAlign(keras.layers.Layer):
         return levels
 
     def call(self, inputs, **kwargs):
-        # TODO: Support batch_size > 1
         image_shape = keras.backend.cast(inputs[0], keras.backend.floatx())
-        boxes       = keras.backend.stop_gradient(inputs[1][0])
-        scores      = keras.backend.stop_gradient(inputs[2][0])
-        fpn         = [keras.backend.stop_gradient(i[0]) for i in inputs[3:]]
+        boxes       = keras.backend.stop_gradient(inputs[1])
+        scores      = keras.backend.stop_gradient(inputs[2])
+        fpn         = [keras.backend.stop_gradient(i) for i in inputs[3:]]
 
-        # compute from which level to get features from
-        target_levels = self.map_to_level(boxes)
+        def _roi_align(args):
+            boxes  = args[0]
+            scores = args[1]
+            fpn    = args[2]
 
-        # process each pyramid independently
-        rois           = []
-        ordered_indices = []
-        for i in range(len(fpn)):
-            # select the boxes and classification from this pyramid level
-            indices = keras_retinanet.backend.where(keras.backend.equal(target_levels, i))
-            ordered_indices.append(indices)
+            # compute from which level to get features from
+            target_levels = self.map_to_level(boxes)
 
-            level_boxes = keras_retinanet.backend.gather_nd(boxes, indices)
-            fpn_shape   = keras.backend.cast(keras.backend.shape(fpn[i]), dtype=keras.backend.floatx())
+            # process each pyramid independently
+            rois           = []
+            ordered_indices = []
+            for i in range(len(fpn)):
+                # select the boxes and classification from this pyramid level
+                indices = keras_retinanet.backend.where(keras.backend.equal(target_levels, i))
+                ordered_indices.append(indices)
 
-            # convert to expected format for crop_and_resize
-            x1 = level_boxes[:, 0]
-            y1 = level_boxes[:, 1]
-            x2 = level_boxes[:, 2]
-            y2 = level_boxes[:, 3]
-            level_boxes = keras.backend.stack([
-                (y1 / image_shape[1] * fpn_shape[0]) / (fpn_shape[0] - 1),
-                (x1 / image_shape[2] * fpn_shape[1]) / (fpn_shape[1] - 1),
-                (y2 / image_shape[1] * fpn_shape[0] - 1) / (fpn_shape[0] - 1),
-                (x2 / image_shape[2] * fpn_shape[1] - 1) / (fpn_shape[1] - 1),
-            ], axis=1)
+                level_boxes = keras_retinanet.backend.gather_nd(boxes, indices)
+                fpn_shape   = keras.backend.cast(keras.backend.shape(fpn[i]), dtype=keras.backend.floatx())
 
-            # append the rois to the list of rois
-            rois.append(backend.crop_and_resize(
-                keras.backend.expand_dims(fpn[i], axis=0),
-                level_boxes,
-                keras.backend.zeros((keras.backend.shape(level_boxes)[0],), dtype='int32'),
-                self.crop_size
-            ))
+                # convert to expected format for crop_and_resize
+                x1 = level_boxes[:, 0]
+                y1 = level_boxes[:, 1]
+                x2 = level_boxes[:, 2]
+                y2 = level_boxes[:, 3]
+                level_boxes = keras.backend.stack([
+                    (y1 / image_shape[1] * fpn_shape[0]) / (fpn_shape[0] - 1),
+                    (x1 / image_shape[2] * fpn_shape[1]) / (fpn_shape[1] - 1),
+                    (y2 / image_shape[1] * fpn_shape[0] - 1) / (fpn_shape[0] - 1),
+                    (x2 / image_shape[2] * fpn_shape[1] - 1) / (fpn_shape[1] - 1),
+                ], axis=1)
 
-        # concatenate rois to one blob
-        rois = keras.backend.concatenate(rois, axis=0)
+                # append the rois to the list of rois
+                rois.append(backend.crop_and_resize(
+                    keras.backend.expand_dims(fpn[i], axis=0),
+                    level_boxes,
+                    keras.backend.zeros((keras.backend.shape(level_boxes)[0],), dtype='int32'),
+                    self.crop_size
+                ))
 
-        # reorder rois back to original order
-        indices = keras.backend.concatenate(ordered_indices, axis=0)
-        rois    = keras_retinanet.backend.scatter_nd(indices, rois, keras.backend.cast(keras.backend.shape(rois), 'int64'))
+            # concatenate rois to one blob
+            rois = keras.backend.concatenate(rois, axis=0)
 
-        return keras.backend.expand_dims(rois, axis=0)
+            # reorder rois back to original order
+            indices = keras.backend.concatenate(ordered_indices, axis=0)
+            rois    = keras_retinanet.backend.scatter_nd(indices, rois, keras.backend.cast(keras.backend.shape(rois), 'int64'))
+
+            return rois
+
+        roi_batch = keras_retinanet.backend.map_fn(
+            _roi_align,
+            elems=[boxes, scores, fpn],
+            dtype=keras.backend.floatx(),
+            parallel_iterations=self.parallel_iterations
+        )
+
+        return roi_batch
 
     def compute_output_shape(self, input_shape):
         return (input_shape[1][0], None, self.crop_size[0], self.crop_size[1], input_shape[3][-1])

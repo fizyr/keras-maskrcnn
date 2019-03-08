@@ -250,7 +250,7 @@ class Generator(keras.utils.Sequence):
 
             # add flattened mask
             for mask_index, mask in enumerate(annotations['masks']):
-                masks_batch[index, mask_index, 7:] = mask.flatten()
+                masks_batch[index, mask_index, 7:7 + (mask.shape[0] * mask.shape[1])] = mask.flatten()
 
         return list(batches) + [masks_batch]
 
