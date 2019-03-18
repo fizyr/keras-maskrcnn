@@ -34,7 +34,7 @@ def mask(iou_threshold=0.5, mask_size=(28, 28), parallel_iterations=32):
             annotations = args[2]
             masks_target = args[3]
 
-            return compute_loss(
+            return compute_mask_loss(
                 boxes,
                 masks,
                 annotations,
