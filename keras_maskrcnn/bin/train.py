@@ -82,7 +82,7 @@ def create_models(backbone_retinanet, num_classes, weights, freeze_backbone=Fals
     return model, training_model, prediction_model
 
 
-def create_callbacks(model, training_model, prediction_model, validation_generator, args):
+def create_callbacks(model, training_model, prediction_model, validation_generator, args, create_evaluation=None):
     callbacks = []
 
     # save the prediction model
@@ -121,6 +121,8 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
 
             # use prediction model for evaluation
             evaluation = CocoEval(validation_generator)
+        elif create_evaluation:
+            evaluation = create_evaluation(validation_generator, tensorboard=tensorboard_callback, weighted_average=args.weighted_average)
         else:
             evaluation = Evaluate(validation_generator, tensorboard=tensorboard_callback, weighted_average=args.weighted_average)
         evaluation = RedirectModel(evaluation, prediction_model)
