@@ -96,7 +96,7 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
             ),
             verbose=1
         )
-        checkpoint = RedirectModel(checkpoint, prediction_model)
+        checkpoint = RedirectModel(checkpoint, model)
         callbacks.append(checkpoint)
 
     tensorboard_callback = None
