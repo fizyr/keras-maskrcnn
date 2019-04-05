@@ -82,7 +82,7 @@ def create_models(backbone_retinanet, num_classes, weights, freeze_backbone=Fals
     return model, training_model, prediction_model
 
 
-def create_callbacks(model, training_model, prediction_model, validation_generator, args, create_evaluation=None):
+def create_callbacks(model, training_model, prediction_model, validation_generator, args, create_evaluation=Evaluate):
     callbacks = []
 
     # save the prediction model
