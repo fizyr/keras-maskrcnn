@@ -28,7 +28,7 @@ def compute_overlap(a, b):
     intersection = np.zeros((a.shape[0], b.shape[0]))
     union        = np.zeros((a.shape[0], b.shape[0]))
     for index, mask in enumerate(a):
-        intersection[index, :] = np.sum(np.count_nonzero(b == mask, axis=1), axis=1)
+        intersection[index, :] = np.sum(np.count_nonzero(b & mask, axis=1), axis=1)
         union[index, :]        = np.sum(np.count_nonzero(b + mask, axis=1), axis=1)
 
     return intersection / union
