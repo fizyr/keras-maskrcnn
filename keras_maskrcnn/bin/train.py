@@ -158,12 +158,14 @@ def create_generators(args):
             config=args.config
         )
 
-        validation_generator = CocoGenerator(
-            args.coco_path,
-            'val2017',
-            batch_size=args.batch_size,
-            config=args.config
-        )
+        validation_generator = None
+        if args.evaluation:
+            validation_generator = CocoGenerator(
+                args.coco_path,
+                'val2017',
+                batch_size=args.batch_size,
+                config=args.config
+            )
     elif args.dataset_type == 'csv':
         from ..preprocessing.csv_generator import CSVGenerator
 
