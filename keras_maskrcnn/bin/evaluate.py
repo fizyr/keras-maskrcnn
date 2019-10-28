@@ -20,10 +20,9 @@ import argparse
 import os
 import sys
 
-import keras
-import tensorflow as tf
-
+import keras_retinanet.backend
 from keras_retinanet.utils.config import read_config_file
+from keras_retinanet.utils.gpu import setup_gpu
 from keras_retinanet.utils.keras_version import check_keras_version
 
 # Allow relative imports when being executed as script.
@@ -37,11 +36,8 @@ from .. import models
 from ..preprocessing.csv_generator import CSVGenerator
 from ..utils.eval import evaluate
 
-
-def get_session():
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    return tf.Session(config=config)
+# Disable tensorflow v2 behavior as it breaks functionality.
+keras_retinanet.backend.disable_tensorflow_v2_behavior()
 
 
 def create_generator(args):
@@ -109,8 +105,7 @@ def main(args=None):
 
     # optionally choose specific GPU
     if args.gpu:
-        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-    keras.backend.tensorflow_backend.set_session(get_session())
+        setup_gpu(args.gpu)
 
     # optionally load config parameters
     if args.config:

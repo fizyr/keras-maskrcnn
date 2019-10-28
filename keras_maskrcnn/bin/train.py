@@ -21,15 +21,15 @@ import os
 import sys
 
 import keras
-import keras.preprocessing.image
-import tensorflow as tf
 
+import keras_retinanet.backend
 import keras_retinanet.losses
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.utils.config import read_config_file, parse_anchor_parameters
-from keras_retinanet.utils.transform import random_transform_generator
+from keras_retinanet.utils.gpu import setup_gpu
 from keras_retinanet.utils.keras_version import check_keras_version
 from keras_retinanet.utils.model import freeze as freeze_model
+from keras_retinanet.utils.transform import random_transform_generator
 
 # Allow relative imports when being executed as script.
 if __name__ == "__main__" and __package__ is None:
@@ -42,11 +42,8 @@ from .. import losses
 from .. import models
 from ..callbacks.eval import Evaluate
 
-
-def get_session():
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    return tf.Session(config=config)
+# Disable tensorflow v2 behavior as it breaks functionality.
+keras_retinanet.backend.disable_tensorflow_v2_behavior()
 
 
 def model_with_weights(model, weights, skip_mismatch):
@@ -259,8 +256,7 @@ def main(args=None):
 
     # optionally choose specific GPU
     if args.gpu:
-        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-    keras.backend.tensorflow_backend.set_session(get_session())
+        setup_gpu(args.gpu)
 
     # optionally load config parameters
     if args.config:
