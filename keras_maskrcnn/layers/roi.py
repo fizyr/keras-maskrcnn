@@ -4,6 +4,9 @@ import keras_retinanet.backend
 
 from .. import backend
 
+# TODO: Remove this (necessary for a workaround).
+import tensorflow as tf
+
 
 class RoiAlign(keras.layers.Layer):
     def __init__(self, crop_size=(14, 14), parallel_iterations=32, **kwargs):
@@ -69,7 +72,7 @@ class RoiAlign(keras.layers.Layer):
                 rois.append(backend.crop_and_resize(
                     keras.backend.expand_dims(fpn[i], axis=0),
                     level_boxes,
-                    keras.backend.zeros((keras.backend.shape(level_boxes)[0],), dtype='int32'),
+                    tf.zeros((keras.backend.shape(level_boxes)[0],), dtype='int32'),  # TODO: Remove this workaround (https://github.com/tensorflow/tensorflow/issues/33787).
                     self.crop_size
                 ))
 
