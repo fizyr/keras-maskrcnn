@@ -65,23 +65,6 @@ For training on [MS COCO](http://cocodataset.org/#home), run:
 maskrcn-train coco /path/to/MS/COCO
 ```
 
-The pretrained MS COCO model can be downloaded [here](https://github.com/fizyr/keras-maskrcnn/releases). Results using the `cocoapi` are shown below (note: the closest resembling architecture in the MaskRCNN paper achieves an mAP of 0.336).
-
-```
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.278
- Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.488
- Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.286
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.127
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.312
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.392
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.251
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.386
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.405
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.219
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.452
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.565
-```
-
 For training on a [custom dataset], a CSV file can be used as a way to pass the data.
 See below for more details on the format of these CSV files.
 To train using your CSV, run:
@@ -146,16 +129,39 @@ bird,2
 
 ## Pretrained models
 
-There are 3 Mask R-CNN models based on ResNet50, ResNet101 and ResNet152 trained on [Open Images Dataset](https://storage.googleapis.com/openimages/web/challenge2019_downloads.html) for [300 classes](https://github.com/ZFTurbo/Keras-Mask-RCNN-for-Open-Images-2019-Instance-Segmentation/blob/master/data_segmentation/challenge-2019-classes-description-segmentable.csv). 
+### COCO
 
-| Backbone | Image Size (px) | Model | Small validation mAP | [LB (Public)](https://www.kaggle.com/c/open-images-2019-instance-segmentation/leaderboard) |
-| --- | --- | --- | --- | --- | 
-| ResNet50 | 800 - 1024 | [521 MB](https://github.com/ZFTurbo/Keras-Mask-RCNN-for-Open-Images-2019-Instance-Segmentation/releases/download/v1.0/mask_rcnn_resnet50_oid_v1.0.h5) | 0.5745 | 0.4259 |
-| ResNet101 | 800 - 1024 | [739 MB](https://github.com/ZFTurbo/Keras-Mask-RCNN-for-Open-Images-2019-Instance-Segmentation/releases/download/v1.0/mask_rcnn_resnet101_oid_v1.0.h5) | 0.5917 | 0.4345 |
-| ResNet152 |  800 - 1024 | [918 MB](https://github.com/ZFTurbo/Keras-Mask-RCNN-for-Open-Images-2019-Instance-Segmentation/releases/download/v1.0/mask_rcnn_resnet152_oid_v1.0.h5) | 0.5899 | 0.4404 |
+The pretrained MS COCO model can be downloaded [here](https://github.com/fizyr/keras-maskrcnn/releases). Results using the `cocoapi` are shown below (note: the closest resembling architecture in the MaskRCNN paper achieves an mAP of 0.336).
 
+```
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.278
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.488
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.286
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.127
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.312
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.392
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.251
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.386
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.405
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.219
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.452
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.565
+```
+
+### Open Images Dataset
+
+There are 3 Mask R-CNN models based on ResNet50, ResNet101 and ResNet152 trained on [Open Images Dataset](https://storage.googleapis.com/openimages/web/challenge2019_downloads.html) for [300 classes](https://gist.github.com/hgaiser/960811a7191acbbf772103ff7bbc002a).
+They can be downloaded in the [releases page](https://github.com/fizyr/keras-maskrcnn/releases/).
+
+| Backbone  | Image Size (px) | Small validation mAP | [LB (Public)](https://www.kaggle.com/c/open-images-2019-instance-segmentation/leaderboard) |
+| --------- | --------------- | -------------------- | ------------------------------------------------------------------------------------------ |
+| ResNet50  | 800 - 1024      | 0.5745               | 0.4259 |
+| ResNet101 | 800 - 1024      | 0.5917               | 0.4345 |
+| ResNet152 | 800 - 1024      | 0.5899               | 0.4404 |
+
+* Credits to @ZFTurbo for the contribution.
 * Model - can be used to resume training or can be used as pretrain for your own instance segmentation model
-* [Inference example](https://github.com/ZFTurbo/Keras-Mask-RCNN-for-Open-Images-2019-Instance-Segmentation/blob/master/inference_example.py) 
+* [Inference example](https://github.com/ZFTurbo/Keras-Mask-RCNN-for-Open-Images-2019-Instance-Segmentation/blob/master/inference_example.py)
 * [Training on OID example](https://github.com/ZFTurbo/Keras-Mask-RCNN-for-Open-Images-2019-Instance-Segmentation/tree/master/training)
 
 ### Discussions
