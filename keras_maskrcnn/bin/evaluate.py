@@ -20,7 +20,6 @@ import argparse
 import os
 import sys
 
-import keras_retinanet.backend
 from keras_retinanet.utils.config import read_config_file
 from keras_retinanet.utils.gpu import setup_gpu
 from keras_retinanet.utils.keras_version import check_keras_version
@@ -35,9 +34,6 @@ if __name__ == "__main__" and __package__ is None:
 from .. import models
 from ..preprocessing.csv_generator import CSVGenerator
 from ..utils.eval import evaluate
-
-# Disable tensorflow v2 behavior as it breaks functionality.
-keras_retinanet.backend.disable_tensorflow_v2_behavior()
 
 
 def create_generator(args):
