@@ -22,7 +22,6 @@ import sys
 
 import keras
 
-import keras_retinanet.backend
 import keras_retinanet.losses
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.utils.config import read_config_file, parse_anchor_parameters
@@ -41,9 +40,6 @@ if __name__ == "__main__" and __package__ is None:
 from .. import losses
 from .. import models
 from ..callbacks.eval import Evaluate
-
-# Disable tensorflow v2 behavior as it breaks functionality.
-keras_retinanet.backend.disable_tensorflow_v2_behavior()
 
 
 def model_with_weights(model, weights, skip_mismatch):
