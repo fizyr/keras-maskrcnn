@@ -2,7 +2,7 @@
 
 
 
-Keras implementation of MaskRNN instance aware segmentation as described in [Mask R-CNN](https://arxiv.org/abs/1703.06870)
+Keras implementation of MaskRCNN instance aware segmentation as described in [Mask R-CNN](https://arxiv.org/abs/1703.06870)
 by Kaiming He, Georgia Gkioxari, Piotr Dollár, Ross Girshick, using RetinaNet as base.
 
 ## Disclaimer
