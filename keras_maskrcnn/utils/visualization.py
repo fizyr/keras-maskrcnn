@@ -42,8 +42,11 @@ def draw_mask(image, box, mask, label=None, color=None, binarize_threshold=0.5):
     image[indices[0], indices[1], :] = 0.5 * image[indices[0], indices[1], :] + 0.5 * mask[indices[0], indices[1], :]
 
     # draw the border
-    indices = np.where(border != [0, 0, 0])
-    image[indices[0], indices[1], :] = 0.2 * image[indices[0], indices[1], :] + 0.8 * border[indices[0], indices[1], :]
+    border_indices = np.where(border != [0, 0, 0])
+    image[border_indices[0], border_indices[1], :] = 0.2 * image[border_indices[0], border_indices[1], :] + 0.8 * border[border_indices[0], border_indices[1], :]
+
+    return indices
+
 
 
 def draw_masks(image, boxes, masks, labels=None, color=None, binarize_threshold=0.5):
@@ -60,5 +63,7 @@ def draw_masks(image, boxes, masks, labels=None, color=None, binarize_threshold=
     if labels is None:
         labels = [None for _ in range(boxes.shape[0])]
 
+    indices = []
     for box, mask, label in zip(boxes, masks, labels):
-        draw_mask(image, box, mask, label=label, color=color, binarize_threshold=binarize_threshold)
+        indices.append(draw_mask(image, box, mask, label=label, color=color, binarize_threshold=binarize_threshold))
+    return indices
