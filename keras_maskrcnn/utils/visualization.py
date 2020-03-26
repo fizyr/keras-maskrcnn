@@ -12,6 +12,8 @@ def draw_mask(image, box, mask, label=None, color=None, binarize_threshold=0.5):
         mask               : A 2D float mask which will be reshaped to the size of the box, binarized and drawn over the image.
         color              : Color to draw the mask with. If the box has 5 values, the last value is assumed to be the label and used to construct a default color.
         binarize_threshold : Threshold used for binarizing the mask.
+    Returns
+        indices            : List of indices representing a mask.
     """
     if label is not None:
         color = label_color(label)
@@ -42,8 +44,10 @@ def draw_mask(image, box, mask, label=None, color=None, binarize_threshold=0.5):
     image[indices[0], indices[1], :] = 0.5 * image[indices[0], indices[1], :] + 0.5 * mask[indices[0], indices[1], :]
 
     # draw the border
-    indices = np.where(border != [0, 0, 0])
-    image[indices[0], indices[1], :] = 0.2 * image[indices[0], indices[1], :] + 0.8 * border[indices[0], indices[1], :]
+    border_indices = np.where(border != [0, 0, 0])
+    image[border_indices[0], border_indices[1], :] = 0.2 * image[border_indices[0], border_indices[1], :] + 0.8 * border[border_indices[0], border_indices[1], :]
+
+    return indices
 
 
 def draw_masks(image, boxes, masks, labels=None, color=None, binarize_threshold=0.5):
@@ -56,9 +60,13 @@ def draw_masks(image, boxes, masks, labels=None, color=None, binarize_threshold=
         labels             : Optional list of labels, used to color the masks with. If provided, color is ignored.
         color              : Color or to draw the masks with.
         binarize_threshold : Threshold used for binarizing the masks.
+    Returns
+        indices            : List of lists of indices ; each list of indices represents a mask.
     """
     if labels is None:
         labels = [None for _ in range(boxes.shape[0])]
 
+    indices = []
     for box, mask, label in zip(boxes, masks, labels):
-        draw_mask(image, box, mask, label=label, color=color, binarize_threshold=binarize_threshold)
+        indices.append(draw_mask(image, box, mask, label=label, color=color, binarize_threshold=binarize_threshold))
+    return indices
